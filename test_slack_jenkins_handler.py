@@ -1,14 +1,17 @@
 from flask import Flask, request, jsonify
 import requests
 import os
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 # Jenkins Configuration
 JENKINS_URL = "http://127.0.0.1:8080/job/Todo_deployment_pipeline/"
 JENKINS_USER = "xiaodong"
 JENKINS_TOKEN = os.environ.get("JENKINS_TOKEN")
 
+# CORS(app)
 # Add validation to ensure token exists
 if not JENKINS_TOKEN:
     raise ValueError("JENKINS_TOKEN environment variable is not set")

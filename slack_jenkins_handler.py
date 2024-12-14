@@ -1,17 +1,22 @@
 from flask import Flask, request, jsonify
 import requests
 import os
+from flask_cors import CORS
+
+# CORS(app)
 
 app = Flask(__name__)
+# app.config["SERVER_NAME"] = "*"
 
 # Jenkins Configuration
 JENKINS_URL = "http://127.0.0.1:8080/job/Todo_deployment_pipeline/"
 JENKINS_USER = "xiaodong"
-JENKINS_TOKEN = os.environ.get('JENKINS_TOKEN')
+JENKINS_TOKEN = os.environ.get("JENKINS_TOKEN")
 
 # Add validation to ensure token exists
 if not JENKINS_TOKEN:
     raise ValueError("JENKINS_TOKEN environment variable is not set")
+
 
 @app.route("/slack-handler", methods=["POST"])
 def handle_slack_command():
@@ -33,7 +38,9 @@ def handle_slack_command():
 
     # Return results to Slack
     if response.status_code == 201:
-        slack_message = f"Jenkins Job triggered! Branch: {branch}, Environment: {environment}"
+        slack_message = (
+            f"Jenkins Job triggered! Branch: {branch}, Environment: {environment}"
+        )
     else:
         slack_message = f"Failed to trigger Jenkins Job. Error: {response.text}"
 
@@ -49,5 +56,6 @@ def handle_slack_command():
     else:
         return jsonify({"text": "Failed to send message to Slack."}), 500
 
+
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
