@@ -3,19 +3,20 @@ import requests
 import os
 from flask_cors import CORS
 
-# CORS(app)
-
 app = Flask(__name__)
-# app.config["SERVER_NAME"] = "*"
+CORS(app)
 
 # Jenkins Configuration
 JENKINS_URL = "http://127.0.0.1:8080/job/Todo_deployment_pipeline/"
 JENKINS_USER = "xiaodong"
 JENKINS_TOKEN = os.environ.get("JENKINS_TOKEN")
+SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 
-# Add validation to ensure token exists
+# Add validation to ensure tokens exist
 if not JENKINS_TOKEN:
     raise ValueError("JENKINS_TOKEN environment variable is not set")
+if not SLACK_BOT_TOKEN:
+    raise ValueError("SLACK_BOT_TOKEN environment variable is not set")
 
 
 @app.route("/slack-handler", methods=["POST"])
@@ -29,18 +30,16 @@ def handle_slack_command():
     branch = params.get("branch", "main")
     environment = params.get("environment", "staging")
 
-    # Modify Jenkins URL to explicitly hit the build endpoint
-    build_url = f"{JENKINS_URL}build"  # Add 'build' to the URL
+    build_url = f"{JENKINS_URL}build"
 
     print(f"Triggering Jenkins build at: {build_url}")
     print(f"With parameters: branch={branch}, environment={environment}")
 
-    # Call Jenkins API
     try:
         response = requests.post(
             build_url,
             auth=(JENKINS_USER, JENKINS_TOKEN),
-            params={  # Changed from data to params
+            params={
                 "branch": branch,
                 "environment": environment,
             },
@@ -53,25 +52,25 @@ def handle_slack_command():
         print(f"Error calling Jenkins: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-    # Return results
-    if response.status_code in [201, 200]:  # Accept both 201 and 200 as success
-        return (
-            jsonify(
-                {
-                    "message": f"Jenkins Job triggered! Branch: {branch}, Environment: {environment}"
-                }
-            ),
-            200,
+    # Return results to Slack
+    if response.status_code in [201, 200]:
+        slack_message = (
+            f"Jenkins Job triggered! Branch: {branch}, Environment: {environment}"
         )
     else:
-        return (
-            jsonify(
-                {
-                    "error": f"Failed to trigger Jenkins Job. Status: {response.status_code}, Response: {response.text}"
-                }
-            ),
-            500,
-        )
+        slack_message = f"Failed to trigger Jenkins Job. Error: {response.text}"
+
+    # Send message to Slack using environment variable
+    slack_response = requests.post(
+        "https://slack.com/api/chat.postMessage",
+        headers={"Authorization": f"Bearer {SLACK_BOT_TOKEN}"},
+        json={"channel": channel_id, "text": slack_message},
+    )
+
+    if slack_response.status_code == 200:
+        return jsonify({"text": "Message sent to Slack!"}), 200
+    else:
+        return jsonify({"text": "Failed to send message to Slack."}), 500
 
 
 if __name__ == "__main__":
