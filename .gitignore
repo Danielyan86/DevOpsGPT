@@ -166,3 +166,6 @@ node_modules/
 npm-debug.log
 nohup.out
 
+# PM2 files
+.pm2/
+

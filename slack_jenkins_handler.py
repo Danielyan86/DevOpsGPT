@@ -1,13 +1,17 @@
 from flask import Flask, request, jsonify
 import requests
+import os
 
 app = Flask(__name__)
 
 # Jenkins Configuration
-JENKINS_URL = "http://localhost:8080/job/<job-name>/buildWithParameters"
-JENKINS_USER = "admin"
-JENKINS_TOKEN = "<your-token>"
+JENKINS_URL = "http://127.0.0.1:8080/job/Todo_deployment_pipeline/"
+JENKINS_USER = "xiaodong"
+JENKINS_TOKEN = os.environ.get('JENKINS_TOKEN')
 
+# Add validation to ensure token exists
+if not JENKINS_TOKEN:
+    raise ValueError("JENKINS_TOKEN environment variable is not set")
 
 @app.route("/slack-handler", methods=["POST"])
 def handle_slack_command():
@@ -29,9 +33,7 @@ def handle_slack_command():
 
     # Return results to Slack
     if response.status_code == 201:
-        slack_message = (
-            f"Jenkins Job triggered! Branch: {branch}, Environment: {environment}"
-        )
+        slack_message = f"Jenkins Job triggered! Branch: {branch}, Environment: {environment}"
     else:
         slack_message = f"Failed to trigger Jenkins Job. Error: {response.text}"
 
@@ -46,7 +48,6 @@ def handle_slack_command():
         return jsonify({"text": "Message sent to Slack!"}), 200
     else:
         return jsonify({"text": "Failed to send message to Slack."}), 500
-
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
