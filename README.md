@@ -51,3 +51,11 @@ The goal is to provide a streamlined, intelligent system for managing CI/CD pipe
    - n8n formats the output and sends it to Slack or other communication tools.
 4. **Action**:
    - Based on recommendations, CI/CD tools execute deployment strategies or retest cases.
+
+### port list
+
+- 8080: jenkins
+- 5001: slack_hanlder
+- 3001: APP
+- 4040: ngrok
+- default: dify
