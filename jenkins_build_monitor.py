@@ -5,6 +5,7 @@ import time
 from flask_cors import CORS
 import json
 from typing import Dict, Optional
+from threading import Thread
 
 app = Flask(__name__)
 CORS(app)
@@ -456,19 +457,25 @@ def handle_natural_language_deploy():
                 send_slack_message(channel_id, error_msg)
             return jsonify({"error": error_msg}), 400
 
-        # Trigger Jenkins build with parsed parameters
-        build_url = f"{JENKINS_URL}build"
+        # Trigger Jenkins build
+        print(f"\n=== Triggering Jenkins Build ===")
+        print(f"Parameters: {deployment_params}")
+
+        build_url = f"{JENKINS_URL.rstrip('/')}/build"
         response = requests.post(
             build_url, auth=(JENKINS_USER, JENKINS_TOKEN), params=deployment_params
         )
 
+        print(f"Jenkins response status: {response.status_code}")
+        print(f"Jenkins response text: {response.text}")
+
         if response.status_code not in [201, 200]:
-            error_msg = f"❌ Failed to trigger deployment: {response.status_code}"
+            error_msg = f"❌ Failed to trigger Jenkins build: {response.status_code}"
             if channel_id:
                 send_slack_message(channel_id, error_msg)
             return jsonify({"error": error_msg}), 500
 
-        # Get build number and start monitoring
+        # Get build number
         build_number = get_last_build_number()
         if not build_number:
             error_msg = "❌ Could not determine build number"
@@ -476,18 +483,17 @@ def handle_natural_language_deploy():
                 send_slack_message(channel_id, error_msg)
             return jsonify({"error": error_msg}), 500
 
-        # Start monitoring in background thread if channel_id provided
-        if channel_id:
-            Thread(
-                target=monitor_build_status,
-                args=(
-                    build_number,
-                    channel_id,
-                    deployment_params["branch"],
-                    deployment_params["environment"],
-                ),
-                daemon=True,
-            ).start()
+        # Start monitoring in background thread
+        Thread(
+            target=monitor_build_status,
+            args=(
+                build_number,
+                channel_id,
+                deployment_params["branch"],
+                deployment_params["environment"],
+            ),
+            daemon=True,
+        ).start()
 
         return (
             jsonify(
@@ -505,7 +511,7 @@ def handle_natural_language_deploy():
         error_msg = f"❌ Error processing deployment request: {str(e)}"
         print(f"Error: {str(e)}")
         print(f"Request data: {request.get_data()}")
-        if channel_id:  # Now channel_id is always defined
+        if channel_id:
             send_slack_message(channel_id, error_msg)
         return jsonify({"error": error_msg}), 500
 
