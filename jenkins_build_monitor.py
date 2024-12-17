@@ -3,6 +3,8 @@ import requests
 import os
 import time
 from flask_cors import CORS
+import json
+from typing import Dict, Optional
 
 app = Flask(__name__)
 CORS(app)
@@ -17,6 +19,97 @@ if not JENKINS_TOKEN:
     raise ValueError("JENKINS_TOKEN environment variable is not set")
 if not SLACK_BOT_TOKEN:
     raise ValueError("SLACK_BOT_TOKEN environment variable is not set")
+
+# Update Dify configuration
+DIFY_API_KEY = os.environ.get("DIFY_API_KEY")
+DIFY_API_ENDPOINT = "http://127.0.0.1/v1/chat-messages"  # Updated endpoint
+
+if not DIFY_API_KEY:
+    raise ValueError("DIFY_API_KEY environment variable is not set")
+
+
+def parse_deployment_intent(message: str) -> Optional[Dict]:
+    """Parse natural language deployment request using local Dify API"""
+    try:
+        print(f"\n=== Processing Natural Language Request ===")
+        print(f"Input message: {message}")
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {DIFY_API_KEY}",
+        }
+
+        payload = json.dumps(
+            {
+                "inputs": {},
+                "query": message,
+                "response_mode": "streaming",
+                "conversation_id": "",
+                "user": "chatops-user",
+                "files": [],
+            }
+        )
+
+        print(f"Sending request to Dify with payload: {payload}")
+
+        response = requests.post(
+            DIFY_API_ENDPOINT,
+            headers=headers,
+            data=payload,
+            stream=True,  # Enable streaming
+        )
+
+        print(f"Dify API Response Status: {response.status_code}")
+
+        if response.status_code != 200:
+            print(f"Error from Dify API: {response.text}")
+            return None
+
+        # Process streaming response
+        full_response = ""
+        thought_content = None
+
+        for line in response.iter_lines():
+            if line:
+                # Remove 'data: ' prefix
+                line = line.decode("utf-8").replace("data: ", "")
+
+                try:
+                    data = json.loads(line)
+
+                    # Look for the thought event which contains the parsed parameters
+                    if data.get("event") == "agent_thought":
+                        thought_content = data.get("thought", "")
+                        if thought_content:
+                            try:
+                                thought_json = json.loads(thought_content)
+                                parameters = thought_json.get("parameters", {})
+
+                                # Extract deployment parameters
+                                parsed_params = {
+                                    "branch": parameters.get("branch", "main"),
+                                    "environment": parameters.get(
+                                        "environment", "staging"
+                                    ),
+                                }
+
+                                print(f"Parsed parameters: {parsed_params}")
+                                return parsed_params
+
+                            except json.JSONDecodeError as e:
+                                print(f"Error parsing thought content: {e}")
+                                continue
+
+                except json.JSONDecodeError:
+                    continue
+
+        print("No valid parameters found in response")
+        return None
+
+    except Exception as e:
+        print(f"Error in parse_deployment_intent: {str(e)}")
+        print(f"Exception type: {type(e)}")
+        return None
 
 
 def get_last_build_number():
@@ -331,6 +424,90 @@ def handle_slack_command():
         error_msg = f"❌ Error calling Jenkins: {str(e)}"
         send_slack_message(channel_id, error_msg)
         return jsonify({"response_type": "in_channel", "text": error_msg}), 500
+
+
+@app.route("/chat-deploy", methods=["POST"])
+def handle_natural_language_deploy():
+    """Handle natural language deployment requests"""
+    channel_id = None  # Initialize channel_id at the start
+
+    try:
+        # Verify content type
+        if not request.is_json:
+            return jsonify({"error": "Content-Type must be application/json"}), 415
+
+        # Get request data
+        request_data = request.get_json()
+        if not request_data or "message" not in request_data:
+            return jsonify({"error": "Missing 'message' in request body"}), 400
+
+        message = request_data["message"]
+        channel_id = request_data.get("channel_id")  # Optional Slack channel
+
+        print(f"\n=== Processing Deployment Request ===")
+        print(f"Message: {message}")
+        print(f"Channel ID: {channel_id}")
+
+        # Parse deployment intent
+        deployment_params = parse_deployment_intent(message)
+        if not deployment_params:
+            error_msg = "❌ Could not understand deployment request"
+            if channel_id:
+                send_slack_message(channel_id, error_msg)
+            return jsonify({"error": error_msg}), 400
+
+        # Trigger Jenkins build with parsed parameters
+        build_url = f"{JENKINS_URL}build"
+        response = requests.post(
+            build_url, auth=(JENKINS_USER, JENKINS_TOKEN), params=deployment_params
+        )
+
+        if response.status_code not in [201, 200]:
+            error_msg = f"❌ Failed to trigger deployment: {response.status_code}"
+            if channel_id:
+                send_slack_message(channel_id, error_msg)
+            return jsonify({"error": error_msg}), 500
+
+        # Get build number and start monitoring
+        build_number = get_last_build_number()
+        if not build_number:
+            error_msg = "❌ Could not determine build number"
+            if channel_id:
+                send_slack_message(channel_id, error_msg)
+            return jsonify({"error": error_msg}), 500
+
+        # Start monitoring in background thread if channel_id provided
+        if channel_id:
+            Thread(
+                target=monitor_build_status,
+                args=(
+                    build_number,
+                    channel_id,
+                    deployment_params["branch"],
+                    deployment_params["environment"],
+                ),
+                daemon=True,
+            ).start()
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": f"🚀 Deployment started: Build #{build_number}",
+                    "build_number": build_number,
+                    "parameters": deployment_params,
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        error_msg = f"❌ Error processing deployment request: {str(e)}"
+        print(f"Error: {str(e)}")
+        print(f"Request data: {request.get_data()}")
+        if channel_id:  # Now channel_id is always defined
+            send_slack_message(channel_id, error_msg)
+        return jsonify({"error": error_msg}), 500
 
 
 if __name__ == "__main__":

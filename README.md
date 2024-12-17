@@ -55,7 +55,7 @@ The goal is to provide a streamlined, intelligent system for managing CI/CD pipe
 ### port list
 
 - 8080: jenkins
-- 5001: slack_hanlder
+- 5001: webhook_for_jenkins
 - 3001: APP
 - 4040: ngrok
 - default: dify
