@@ -430,24 +430,17 @@ def handle_slack_command():
 @app.route("/chat-deploy", methods=["POST"])
 def handle_natural_language_deploy():
     """Handle natural language deployment requests"""
-    channel_id = None
-
     try:
-        # Get content type
+        # Get content type and parse request
         content_type = request.headers.get("Content-Type", "").lower()
         print(f"Received Content-Type: {content_type}")
-        print(f"Form Data: {request.form}")  # Debug form data
-        print(f"Raw Data: {request.get_data()}")  # Debug raw data
 
         # Parse request data based on content type
         if "application/json" in content_type:
             request_data = request.get_json()
         elif "application/x-www-form-urlencoded" in content_type:
-            # Handle Slack slash command format
             request_data = {
-                "message": request.form.get(
-                    "text", request.form.get("message")
-                ),  # Try both 'text' and 'message'
+                "message": request.form.get("text", request.form.get("message")),
                 "channel_id": request.form.get("channel_id"),
             }
         else:
@@ -456,52 +449,19 @@ def handle_natural_language_deploy():
                     {
                         "error": "Content-Type must be application/json or application/x-www-form-urlencoded",
                         "received": content_type,
-                        "form_data": dict(request.form),
                     }
                 ),
                 415,
             )
 
-        print(f"Parsed request data: {request_data}")
-
-        # Validate required fields
+        # Validate message
         if not request_data or not request_data.get("message"):
-            return (
-                jsonify(
-                    {
-                        "error": "Missing 'message' or 'text' in request",
-                        "received_data": request_data,
-                        "form_data": dict(request.form),
-                    }
-                ),
-                400,
-            )
-
-        message = request_data["message"]
-        channel_id = request_data.get("channel_id", "").strip()  # Clean channel ID
-
-        # Validate channel_id format if provided
-        if channel_id:
-            # Handle Slack channel formats
-            if channel_id.startswith("C"):
-                # Already in correct format
-                pass
-            elif channel_id.startswith("#"):
-                channel_id = channel_id[1:]  # Remove # prefix
-            else:
-                channel_id = f"C{channel_id}"  # Add C prefix if missing
-
-        print(f"\n=== Processing Deployment Request ===")
-        print(f"Message: {message}")
-        print(f"Channel ID: {channel_id}")
+            return jsonify({"error": "Missing 'message' or 'text' in request"}), 400
 
         # Parse deployment intent
-        deployment_params = parse_deployment_intent(message)
+        deployment_params = parse_deployment_intent(request_data["message"])
         if not deployment_params:
-            error_msg = "❌ Could not understand deployment request"
-            if channel_id:
-                send_slack_message(channel_id, error_msg)
-            return jsonify({"error": error_msg}), 400
+            return jsonify({"error": "Could not understand deployment request"}), 400
 
         # Trigger Jenkins build
         print(f"\n=== Triggering Jenkins Build ===")
@@ -512,54 +472,38 @@ def handle_natural_language_deploy():
             build_url, auth=(JENKINS_USER, JENKINS_TOKEN), params=deployment_params
         )
 
-        print(f"Jenkins response status: {response.status_code}")
-        print(f"Jenkins response text: {response.text}")
-
         if response.status_code not in [201, 200]:
-            error_msg = f"❌ Failed to trigger Jenkins build: {response.status_code}"
-            if channel_id:
-                send_slack_message(channel_id, error_msg)
-            return jsonify({"error": error_msg}), 500
+            return (
+                jsonify(
+                    {
+                        "error": f"Failed to trigger Jenkins build: {response.status_code}"
+                    }
+                ),
+                500,
+            )
 
-        # Get build number
+        # Get build number for response
         build_number = get_last_build_number()
         if not build_number:
-            error_msg = "❌ Could not determine build number"
-            if channel_id:
-                send_slack_message(channel_id, error_msg)
-            return jsonify({"error": error_msg}), 500
+            return jsonify({"error": "Could not determine build number"}), 500
 
-        # Start monitoring in background thread
-        Thread(
-            target=monitor_build_status,
-            args=(
-                build_number,
-                channel_id,
-                deployment_params["branch"],
-                deployment_params["environment"],
-            ),
-            daemon=True,
-        ).start()
-
+        # Return success response
         return (
             jsonify(
                 {
                     "success": True,
-                    "message": f"🚀 Deployment started: Build #{build_number}",
+                    "message": f"Deployment started: Build #{build_number}",
                     "build_number": build_number,
                     "parameters": deployment_params,
+                    "build_url": f"{JENKINS_URL}{build_number}/",
                 }
             ),
             200,
         )
 
     except Exception as e:
-        error_msg = f"❌ Error processing deployment request: {str(e)}"
         print(f"Error: {str(e)}")
-        print(f"Request data: {request.get_data()}")
-        if channel_id:
-            send_slack_message(channel_id, error_msg)
-        return jsonify({"error": error_msg}), 500
+        return jsonify({"error": f"Error processing deployment request: {str(e)}"}), 500
 
 
 if __name__ == "__main__":
