@@ -430,20 +430,66 @@ def handle_slack_command():
 @app.route("/chat-deploy", methods=["POST"])
 def handle_natural_language_deploy():
     """Handle natural language deployment requests"""
-    channel_id = None  # Initialize channel_id at the start
+    channel_id = None
 
     try:
-        # Verify content type
-        if not request.is_json:
-            return jsonify({"error": "Content-Type must be application/json"}), 415
+        # Get content type
+        content_type = request.headers.get("Content-Type", "").lower()
+        print(f"Received Content-Type: {content_type}")
+        print(f"Form Data: {request.form}")  # Debug form data
+        print(f"Raw Data: {request.get_data()}")  # Debug raw data
 
-        # Get request data
-        request_data = request.get_json()
-        if not request_data or "message" not in request_data:
-            return jsonify({"error": "Missing 'message' in request body"}), 400
+        # Parse request data based on content type
+        if "application/json" in content_type:
+            request_data = request.get_json()
+        elif "application/x-www-form-urlencoded" in content_type:
+            # Handle Slack slash command format
+            request_data = {
+                "message": request.form.get(
+                    "text", request.form.get("message")
+                ),  # Try both 'text' and 'message'
+                "channel_id": request.form.get("channel_id"),
+            }
+        else:
+            return (
+                jsonify(
+                    {
+                        "error": "Content-Type must be application/json or application/x-www-form-urlencoded",
+                        "received": content_type,
+                        "form_data": dict(request.form),
+                    }
+                ),
+                415,
+            )
+
+        print(f"Parsed request data: {request_data}")
+
+        # Validate required fields
+        if not request_data or not request_data.get("message"):
+            return (
+                jsonify(
+                    {
+                        "error": "Missing 'message' or 'text' in request",
+                        "received_data": request_data,
+                        "form_data": dict(request.form),
+                    }
+                ),
+                400,
+            )
 
         message = request_data["message"]
-        channel_id = request_data.get("channel_id")  # Optional Slack channel
+        channel_id = request_data.get("channel_id", "").strip()  # Clean channel ID
+
+        # Validate channel_id format if provided
+        if channel_id:
+            # Handle Slack channel formats
+            if channel_id.startswith("C"):
+                # Already in correct format
+                pass
+            elif channel_id.startswith("#"):
+                channel_id = channel_id[1:]  # Remove # prefix
+            else:
+                channel_id = f"C{channel_id}"  # Add C prefix if missing
 
         print(f"\n=== Processing Deployment Request ===")
         print(f"Message: {message}")
