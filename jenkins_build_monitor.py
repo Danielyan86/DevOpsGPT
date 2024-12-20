@@ -1,32 +1,27 @@
 from flask import Flask, request, jsonify
 import requests
-import os
-import time
 from flask_cors import CORS
 import json
 from typing import Dict, Optional
 from threading import Thread
+from config import (
+    validate_config,
+    FLASK_HOST,
+    FLASK_PORT,
+    FLASK_DEBUG,
+    JENKINS_URL,
+    JENKINS_USER,
+    JENKINS_TOKEN,
+    SLACK_BOT_TOKEN,
+    DIFY_API_KEY,
+    DIFY_API_ENDPOINT,
+)
 
 app = Flask(__name__)
 CORS(app)
 
-# Jenkins Configuration
-JENKINS_URL = "http://127.0.0.1:8080/job/Todo_deployment_pipeline/"
-JENKINS_USER = "xiaodong"
-JENKINS_TOKEN = os.environ.get("JENKINS_TOKEN")
-SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
-
-if not JENKINS_TOKEN:
-    raise ValueError("JENKINS_TOKEN environment variable is not set")
-if not SLACK_BOT_TOKEN:
-    raise ValueError("SLACK_BOT_TOKEN environment variable is not set")
-
-# Update Dify configuration
-DIFY_API_KEY = os.environ.get("DIFY_API_KEY")
-DIFY_API_ENDPOINT = "http://127.0.0.1/v1/chat-messages"  # Updated endpoint
-
-if not DIFY_API_KEY:
-    raise ValueError("DIFY_API_KEY environment variable is not set")
+# Validate configuration on startup
+validate_config()
 
 
 def parse_deployment_intent(message: str) -> Optional[Dict]:
@@ -229,57 +224,68 @@ def handle_natural_language_deploy():
     """Handle natural language deployment requests"""
     try:
         # Get content type and parse request
-        content_type = request.headers.get('Content-Type', '').lower()
+        content_type = request.headers.get("Content-Type", "").lower()
         print(f"Received Content-Type: {content_type}")
 
         # Parse request data based on content type
-        if 'application/json' in content_type:
+        if "application/json" in content_type:
             request_data = request.get_json()
-        elif 'application/x-www-form-urlencoded' in content_type:
+        elif "application/x-www-form-urlencoded" in content_type:
             request_data = {
-                'message': request.form.get('text', request.form.get('message')),
-                'channel_id': request.form.get('channel_id')
+                "message": request.form.get("text", request.form.get("message")),
+                "channel_id": request.form.get("channel_id"),
             }
         else:
-            return jsonify({
-                "error": "Content-Type must be application/json or application/x-www-form-urlencoded",
-                "received": content_type
-            }), 415
+            return (
+                jsonify(
+                    {
+                        "error": "Content-Type must be application/json or application/x-www-form-urlencoded",
+                        "received": content_type,
+                    }
+                ),
+                415,
+            )
 
         # Validate message
-        if not request_data or not request_data.get('message'):
-            return jsonify({
-                "error": "Missing 'message' or 'text' in request"
-            }), 400
+        if not request_data or not request_data.get("message"):
+            return jsonify({"error": "Missing 'message' or 'text' in request"}), 400
 
         # Parse deployment intent
-        deployment_params = parse_deployment_intent(request_data['message'])
+        deployment_params = parse_deployment_intent(request_data["message"])
         if not deployment_params:
             return jsonify({"error": "Could not understand deployment request"}), 400
 
         # Trigger Jenkins build
         print(f"\n=== Triggering Jenkins Build ===")
         print(f"Parameters: {deployment_params}")
-        
+
         build_url = f"{JENKINS_URL.rstrip('/')}/build"
         response = requests.post(
-            build_url,
-            auth=(JENKINS_USER, JENKINS_TOKEN),
-            params=deployment_params
+            build_url, auth=(JENKINS_USER, JENKINS_TOKEN), params=deployment_params
         )
 
         if response.status_code not in [201, 200]:
-            return jsonify({
-                "error": f"Failed to trigger Jenkins build: {response.status_code}"
-            }), 500
+            return (
+                jsonify(
+                    {
+                        "error": f"Failed to trigger Jenkins build: {response.status_code}"
+                    }
+                ),
+                500,
+            )
 
         # Return success response
-        return jsonify({
-            "success": True,
-            "message": "Deployment triggered successfully",
-            "parameters": deployment_params,
-            "jenkins_url": JENKINS_URL
-        }), 200
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": "Deployment triggered successfully",
+                    "parameters": deployment_params,
+                    "jenkins_url": JENKINS_URL,
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         print(f"Error: {str(e)}")
@@ -287,4 +293,4 @@ def handle_natural_language_deploy():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    app.run(host=FLASK_HOST, port=FLASK_PORT, debug=FLASK_DEBUG)
