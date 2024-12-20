@@ -3,12 +3,13 @@ from threading import Thread
 from webhookservice.services.jenkins_service import (
     trigger_jenkins_build,
     get_last_build_number,
-    monitor_build_status
+    monitor_build_status,
 )
 from webhookservice.services.slack_service import send_slack_message
 from webhookservice.services.dify_service import parse_deployment_intent
 
-jenkins_bp = Blueprint('jenkins', __name__)
+jenkins_bp = Blueprint("jenkins", __name__)
+
 
 @jenkins_bp.route("/slack-handler", methods=["POST"])
 def handle_slack_command():
@@ -31,16 +32,23 @@ def handle_slack_command():
                     daemon=True,
                 ).start()
 
-                return jsonify({
-                    "response_type": "in_channel",
-                    "text": f"🚀 Starting deployment process...\nBuild #{build_number}\nBranch: {branch}\nEnvironment: {environment}",
-                }), 200
+                return (
+                    jsonify(
+                        {
+                            "response_type": "in_channel",
+                            "text": f"🚀 Starting deployment process...\nBuild #{build_number}\nBranch: {branch}\nEnvironment: {environment}",
+                        }
+                    ),
+                    200,
+                )
             else:
                 error_msg = "❌ Could not determine build number"
                 send_slack_message(channel_id, error_msg)
                 return jsonify({"response_type": "in_channel", "text": error_msg}), 500
         else:
-            error_msg = f"❌ Failed to trigger Jenkins Job. Status: {response.status_code}"
+            error_msg = (
+                f"❌ Failed to trigger Jenkins Job. Status: {response.status_code}"
+            )
             send_slack_message(channel_id, error_msg)
             return jsonify({"response_type": "in_channel", "text": error_msg}), 500
 
@@ -48,6 +56,7 @@ def handle_slack_command():
         error_msg = f"❌ Error calling Jenkins: {str(e)}"
         send_slack_message(channel_id, error_msg)
         return jsonify({"response_type": "in_channel", "text": error_msg}), 500
+
 
 @jenkins_bp.route("/chat-deploy", methods=["POST"])
 def handle_natural_language_deploy():
@@ -64,10 +73,15 @@ def handle_natural_language_deploy():
                 "channel_id": request.form.get("channel_id"),
             }
         else:
-            return jsonify({
-                "error": "Content-Type must be application/json or application/x-www-form-urlencoded",
-                "received": content_type,
-            }), 415
+            return (
+                jsonify(
+                    {
+                        "error": "Content-Type must be application/json or application/x-www-form-urlencoded",
+                        "received": content_type,
+                    }
+                ),
+                415,
+            )
 
         if not request_data or not request_data.get("message"):
             return jsonify({"error": "Missing 'message' or 'text' in request"}), 400
@@ -79,15 +93,29 @@ def handle_natural_language_deploy():
         response = trigger_jenkins_build(**deployment_params)
 
         if response.status_code not in [201, 200]:
-            return jsonify({
-                "error": f"Failed to trigger Jenkins build: {response.status_code}"
-            }), 500
+            return (
+                jsonify(
+                    {
+                        "error": f"Failed to trigger Jenkins build: {response.status_code}"
+                    }
+                ),
+                500,
+            )
 
-        return jsonify({
-            "success": True,
-            "message": "Deployment triggered successfully",
-            "parameters": deployment_params,
-        }), 200
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": ":rocket: Deployment triggered successfully",
+                    "parameters": {
+                        "branch": deployment_params["branch"],
+                        "environment": deployment_params["environment"],
+                    },
+                    "status": ":white_check_mark: Pipeline started",
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         print(f"Error: {str(e)}")
