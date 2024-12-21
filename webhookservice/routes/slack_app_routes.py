@@ -100,20 +100,29 @@ def handle_slack_actions():
         action = payload["actions"][0]
         action_id = action["action_id"]
 
-        # Get the original message timestamp and channel for updating
+        # Get channel info from payload
         channel_id = payload["channel"]["id"]
-        message_ts = payload["message"]["ts"]
-        client = WebClient(token=SLACK_BOT_TOKEN)
+        # Get channel name from the payload or API
+        channel_name = (
+            f"#{payload['channel']['name']}"  # This gets the actual channel name
+        )
 
         if action_id == "confirm_deploy":
             deployment_params = json.loads(action["value"])
+            # Add the actual channel to deployment parameters
+            deployment_params.update({"channel": channel_name})
+
+            print(f"\nDeployment Parameters:")
+            print(f"• Channel being used: {channel_name}")
+
             response = trigger_jenkins_build(**deployment_params)
 
             if response.status_code in [201, 200]:
                 # Update the original message to remove buttons
+                client = WebClient(token=SLACK_BOT_TOKEN)
                 client.chat_update(
                     channel=channel_id,
-                    ts=message_ts,
+                    ts=payload["message"]["ts"],
                     blocks=[
                         {
                             "type": "section",
@@ -133,9 +142,10 @@ def handle_slack_actions():
 
         elif action_id == "cancel_deploy":
             # Update the original message to show cancellation
+            client = WebClient(token=SLACK_BOT_TOKEN)
             client.chat_update(
                 channel=channel_id,
-                ts=message_ts,
+                ts=payload["message"]["ts"],
                 blocks=[
                     {
                         "type": "section",
