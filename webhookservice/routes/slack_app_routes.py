@@ -1,4 +1,16 @@
-@jenkins_bp.route("/slack/events", methods=["POST"])
+from flask import Blueprint, request, jsonify
+import re
+import json
+from webhookservice.services.dify_service import parse_deployment_intent
+from webhookservice.services.slack_service import (
+    send_slack_message,
+    send_interactive_message,
+)
+
+jenkins_bp = Blueprint("slack_events", __name__)
+
+
+@jenkins_bp.route("/deploy/events", methods=["POST"])
 def handle_slack_events():
     """Handle Slack events, specifically app_mention events"""
     try:
