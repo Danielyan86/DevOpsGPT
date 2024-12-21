@@ -62,8 +62,10 @@ def handle_slack_command():
 def handle_natural_language_deploy():
     """Handle natural language deployment requests"""
     try:
+        print("\n" + "=" * 50)
+        print("=== INCOMING REQUEST ===")
         content_type = request.headers.get("Content-Type", "").lower()
-        print(f"Received Content-Type: {content_type}")
+        print(f"Content-Type: {content_type}")
 
         if "application/json" in content_type:
             request_data = request.get_json()
@@ -73,6 +75,7 @@ def handle_natural_language_deploy():
                 "channel_id": request.form.get("channel_id"),
             }
         else:
+            print("=== ERROR: Invalid Content-Type ===")
             return (
                 jsonify(
                     {
@@ -84,15 +87,26 @@ def handle_natural_language_deploy():
             )
 
         if not request_data or not request_data.get("message"):
+            print("=== ERROR: Missing Message ===")
             return jsonify({"error": "Missing 'message' or 'text' in request"}), 400
+
+        print("\n" + "=" * 50)
+        print("=== DIFY API REQUEST ===")
+        print(f"Message: {request_data['message']}")
 
         deployment_params = parse_deployment_intent(request_data["message"])
         if not deployment_params:
+            print("=== ERROR: Could not parse deployment intent ===")
             return jsonify({"error": "Could not understand deployment request"}), 400
+
+        print("\n" + "=" * 50)
+        print("=== JENKINS BUILD REQUEST ===")
+        print(f"Parameters: {deployment_params}")
 
         response = trigger_jenkins_build(**deployment_params)
 
         if response.status_code not in [201, 200]:
+            print(f"=== ERROR: Jenkins Build Failed ({response.status_code}) ===")
             return (
                 jsonify(
                     {
@@ -102,15 +116,14 @@ def handle_natural_language_deploy():
                 500,
             )
 
+        print("\n" + "=" * 50)
+        print("=== SUCCESS: Build Triggered ===")
         return (
             jsonify(
                 {
                     "success": True,
                     "message": ":rocket: Deployment triggered successfully",
-                    "parameters": {
-                        "branch": deployment_params["branch"],
-                        "environment": deployment_params["environment"],
-                    },
+                    "parameters": deployment_params,
                     "status": ":white_check_mark: Pipeline started",
                 }
             ),
@@ -118,5 +131,8 @@ def handle_natural_language_deploy():
         )
 
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print("\n" + "=" * 50)
+        print(f"=== ERROR: Unexpected Exception ===")
+        print(f"Type: {type(e).__name__}")
+        print(f"Message: {str(e)}")
         return jsonify({"error": f"Error processing deployment request: {str(e)}"}), 500
