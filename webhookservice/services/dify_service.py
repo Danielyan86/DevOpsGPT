@@ -3,6 +3,7 @@ import requests
 from typing import Dict, Optional
 from config.settings import DIFY_API_KEY, DIFY_API_ENDPOINT
 
+
 def parse_deployment_intent(message: str) -> Optional[Dict]:
     """Parse natural language deployment request using local Dify API"""
     try:
@@ -53,10 +54,11 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
                         if thought_content:
                             try:
                                 thought_json = json.loads(thought_content)
-                                parameters = thought_json.get("parameters", {})
                                 parsed_params = {
-                                    "branch": parameters.get("branch", "main"),
-                                    "environment": parameters.get("environment", "staging"),
+                                    "branch": thought_json.get("branch", "main"),
+                                    "environment": thought_json.get(
+                                        "environment", "staging"
+                                    ),
                                 }
                                 print(f"Parsed parameters: {parsed_params}")
                                 return parsed_params
