@@ -41,7 +41,6 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
             print(f"Error from Dify API: {response.text}")
             return None
 
-        full_response = ""
         thought_content = None
 
         for line in response.iter_lines():

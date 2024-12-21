@@ -6,7 +6,7 @@ def create_app():
     CORS(app)
     
     # Register blueprints
-    from webhookservice.routes.slack_routes import jenkins_bp
+    from webhookservice.routes.slack_api_routes import jenkins_bp
     app.register_blueprint(jenkins_bp)
     
     return app

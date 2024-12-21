@@ -11,7 +11,7 @@ from webhookservice.services.dify_service import parse_deployment_intent
 jenkins_bp = Blueprint("jenkins", __name__)
 
 
-@jenkins_bp.route("/slack-handler", methods=["POST"])
+@jenkins_bp.route("/deploy-command", methods=["POST"])
 def handle_slack_command():
     user_input = request.form.get("text")
     channel_id = request.form.get("channel_id")
@@ -58,7 +58,7 @@ def handle_slack_command():
         return jsonify({"response_type": "in_channel", "text": error_msg}), 500
 
 
-@jenkins_bp.route("/chat-deploy", methods=["POST"])
+@jenkins_bp.route("/deploy-chat", methods=["POST"])
 def handle_natural_language_deploy():
     """Handle natural language deployment requests"""
     try:
