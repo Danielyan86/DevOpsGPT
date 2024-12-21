@@ -21,6 +21,10 @@ This project implements DevOpsGPT/AIOps concepts by integrating various tools an
 
 ### **Using natural language to deploy the application in slack chatbot**
 
+- can deploy to different branches with multiple languages
+- automatically parse the key parameters from the natural language
+  ![alt text](./docs/pictures/Chinese_deploy.png)
+
 ### Components
 
 - **webhook_for_jenkins (Port 5001)**: Flask service for handling deployment requests
