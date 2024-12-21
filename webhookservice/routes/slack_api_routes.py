@@ -121,7 +121,6 @@ def handle_natural_language_deploy():
         return (
             jsonify(
                 {
-                    "success": True,
                     "message": ":rocket: Deployment triggered successfully",
                     "parameters": deployment_params,
                     "status": ":white_check_mark: Pipeline started",
