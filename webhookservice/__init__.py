@@ -8,7 +8,7 @@ def create_app():
 
     # Register blueprints
     from webhookservice.routes.slack_slash_routes import jenkins_bp
-    from webhookservice.routes.slack_app_routes import slack_events_bp
+    from webhookservice.routes.slack_bot_routes import slack_events_bp
 
     app.register_blueprint(jenkins_bp)
     app.register_blueprint(slack_events_bp)
