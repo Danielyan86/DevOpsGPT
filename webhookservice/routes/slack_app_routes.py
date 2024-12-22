@@ -1,19 +1,37 @@
 from flask import Blueprint, request, jsonify
 import re
 import json
+import logging
 from webhookservice.services.dify_service import parse_deployment_intent
 from webhookservice.services.slack_service import (
     send_slack_message,
     send_interactive_message,
 )
-from webhookservice.services.jenkins_service import trigger_jenkins_build
+from webhookservice.services.jenkins_service import trigger_jenkins_build, BuildResponse
 from slack_sdk import WebClient
 from config.settings import SLACK_BOT_TOKEN
 
-jenkins_bp = Blueprint("slack_events", __name__)
+logger = logging.getLogger(__name__)
+slack_events_bp = Blueprint("slack_events", __name__)
 
 
-@jenkins_bp.route("/deploy/events", methods=["POST"])
+def update_message(channel_id: str, ts: str, blocks: list, text: str):
+    """Helper function to update Slack messages"""
+    try:
+        client = WebClient(token=SLACK_BOT_TOKEN)
+        return client.chat_update(
+            channel=channel_id,
+            ts=ts,
+            blocks=blocks,
+            text=text,
+            replace_original=True,
+        )
+    except Exception as e:
+        logger.error(f"Error updating Slack message: {str(e)}")
+        raise
+
+
+@slack_events_bp.route("/deploy/events", methods=["POST"])
 def handle_slack_events():
     """Handle Slack events, specifically app_mention events"""
     try:
@@ -31,16 +49,19 @@ def handle_slack_events():
 
             # Remove the bot mention from the text
             message = re.sub(r"<@[A-Za-z0-9]+>", "", text).strip()
+            logger.info(f"Processing deployment request: {message}")
 
             # Parse deployment intent using Dify
             deployment_params = parse_deployment_intent(message)
             if not deployment_params:
+                logger.warning("Failed to parse deployment intent")
                 send_slack_message(
                     channel_id,
                     "❌ Sorry, I couldn't understand your deployment request.",
                 )
                 return jsonify({"ok": True}), 200
 
+            logger.info(f"Parsed deployment parameters: {deployment_params}")
             # Create confirmation message with interactive buttons
             confirmation_message = {
                 "channel": channel_id,
@@ -82,17 +103,21 @@ def handle_slack_events():
                 ],
             }
 
-            send_interactive_message(channel_id, confirmation_message["blocks"])
+            send_interactive_message(
+                channel_id,
+                confirmation_message["blocks"],
+                fallback_text=f"Deployment confirmation request for branch {deployment_params['branch']} to {deployment_params['environment']}",
+            )
             return jsonify({"ok": True}), 200
 
         return jsonify({"ok": True}), 200
 
     except Exception as e:
-        print(f"Error handling Slack event: {str(e)}")
+        logger.error(f"Error handling Slack event: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 
-@jenkins_bp.route("/deploy/actions", methods=["POST"])
+@slack_events_bp.route("/deploy/actions", methods=["POST"])
 def handle_slack_actions():
     """Handle interactive component actions from Slack"""
     try:
@@ -102,28 +127,28 @@ def handle_slack_actions():
 
         # Get channel info from payload
         channel_id = payload["channel"]["id"]
+        message_ts = payload["message"]["ts"]
         # Get channel name from the payload or API
-        channel_name = (
-            f"#{payload['channel']['name']}"  # This gets the actual channel name
-        )
+        channel_name = f"#{payload['channel']['name']}"
+
+        logger.info(f"Processing action: {action_id} for channel: {channel_name}")
 
         if action_id == "confirm_deploy":
             deployment_params = json.loads(action["value"])
             # Add the actual channel to deployment parameters
             deployment_params.update({"channel": channel_name})
 
-            print(f"\nDeployment Parameters:")
-            print(f"• Channel being used: {channel_name}")
+            logger.info(f"Deployment Parameters: {deployment_params}")
 
             response = trigger_jenkins_build(**deployment_params)
+            logger.info(f"Jenkins build response: {response}")
 
-            if response.status_code in [201, 200]:
+            if response.success:
                 # Update the original message to remove buttons
-                client = WebClient(token=SLACK_BOT_TOKEN)
-                client.chat_update(
-                    channel=channel_id,
-                    ts=payload["message"]["ts"],
-                    blocks=[
+                update_message(
+                    channel_id,
+                    message_ts,
+                    [
                         {
                             "type": "section",
                             "text": {
@@ -132,32 +157,45 @@ def handle_slack_actions():
                             },
                         }
                     ],
-                    text=f"Deployment started for {deployment_params['branch']}",
+                    f"Deployment started for {deployment_params['branch']}",
+                )
+                return jsonify({"ok": True})
+            else:
+                logger.error(f"Deployment failed: {response.message}")
+                # Update the original message to show error
+                update_message(
+                    channel_id,
+                    message_ts,
+                    [
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"❌ *Deployment Failed*\n• Error: {response.message}\n• Branch: `{deployment_params['branch']}`\n• Environment: `{deployment_params['environment']}`",
+                            },
+                        }
+                    ],
+                    f"Deployment failed: {response.message}",
                 )
                 return jsonify({"ok": True})
 
-            return jsonify(
-                {"response_type": "in_channel", "text": "❌ Failed to start deployment"}
-            )
-
         elif action_id == "cancel_deploy":
             # Update the original message to show cancellation
-            client = WebClient(token=SLACK_BOT_TOKEN)
-            client.chat_update(
-                channel=channel_id,
-                ts=payload["message"]["ts"],
-                blocks=[
+            update_message(
+                channel_id,
+                message_ts,
+                [
                     {
                         "type": "section",
                         "text": {"type": "mrkdwn", "text": "❌ *Deployment Cancelled*"},
                     }
                 ],
-                text="Deployment cancelled",
+                "Deployment cancelled",
             )
             return jsonify({"ok": True})
 
     except Exception as e:
-        print(f"Error handling action: {str(e)}")
+        logger.error(f"Error handling action: {str(e)}", exc_info=True)
         return (
             jsonify(
                 {
