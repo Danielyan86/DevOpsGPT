@@ -39,7 +39,7 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
 
         if response.status_code != 200:
             print(f"Error from Dify API: {response.text}")
-            return None
+            return {"error": response.text}
 
         thought_content = None
 
@@ -62,8 +62,9 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
                                 print(f"Parsed parameters: {parsed_params}")
                                 return parsed_params
                             except json.JSONDecodeError as e:
-                                print(f"Error parsing thought content: {e}")
-                                continue
+                                print(f"Non-JSON thought content: {thought_content}")
+                                # Return the raw thought content for non-JSON responses
+                                return {"message": thought_content}
                 except json.JSONDecodeError:
                     continue
 

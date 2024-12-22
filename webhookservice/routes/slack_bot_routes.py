@@ -52,8 +52,8 @@ def handle_slack_events():
             logger.info(f"Processing deployment request: {message}")
 
             # Parse deployment intent using Dify
-            deployment_params = parse_deployment_intent(message)
-            if not deployment_params:
+            result = parse_deployment_intent(message)
+            if not result:
                 logger.warning("Failed to parse deployment intent")
                 send_slack_message(
                     channel_id,
@@ -61,7 +61,15 @@ def handle_slack_events():
                 )
                 return jsonify({"ok": True}), 200
 
-            logger.info(f"Parsed deployment parameters: {deployment_params}")
+            # Check if this is a non-deployment message
+            if "message" in result:
+                logger.info(f"Received non-deployment response: {result['message']}")
+                send_slack_message(channel_id, result["message"])
+                return jsonify({"ok": True}), 200
+
+            # Continue with deployment confirmation
+            logger.info(f"Parsed deployment parameters: {result}")
+
             # Create confirmation message with interactive buttons
             confirmation_message = {
                 "channel": channel_id,
@@ -70,7 +78,7 @@ def handle_slack_events():
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
-                            "text": f"*Deployment Confirmation*\nDo you want to deploy with these parameters?\n• Branch: `{deployment_params['branch']}`\n• Environment: `{deployment_params['environment']}`",
+                            "text": f"*Deployment Confirmation*\nDo you want to deploy with these parameters?\n• Branch: `{result['branch']}`\n• Environment: `{result['environment']}`",
                         },
                     },
                     {
@@ -84,7 +92,7 @@ def handle_slack_events():
                                     "emoji": True,
                                 },
                                 "style": "primary",
-                                "value": json.dumps(deployment_params),
+                                "value": json.dumps(result),
                                 "action_id": "confirm_deploy",
                             },
                             {
@@ -106,7 +114,7 @@ def handle_slack_events():
             send_interactive_message(
                 channel_id,
                 confirmation_message["blocks"],
-                fallback_text=f"Deployment confirmation request for branch {deployment_params['branch']} to {deployment_params['environment']}",
+                fallback_text=f"Deployment confirmation request for branch {result['branch']} to {result['environment']}",
             )
             return jsonify({"ok": True}), 200
 
