@@ -44,6 +44,8 @@ This project implements DevOpsGPT/AIOps concepts by integrating various tools an
   ![alt text](./docs/pictures/jenkins_agent.png)
 - slack configuration
   ![alt text](./docs/pictures/slack_configuration.png)
+- set jenkins token
+  ![alt text](./docs/pictures/jenkins_token.png)
 
 ## Start Prometheus server
 

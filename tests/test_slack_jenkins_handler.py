@@ -8,7 +8,8 @@ CORS(app)
 
 # Jenkins Configuration
 JENKINS_URL = "http://127.0.0.1:8080/job/Todo_deployment_pipeline/"
-JENKINS_USER = "xiaodong"
+JENKINS_USER = os.environ.get("JENKINS_USER")
+JENKINS_TOKEN = os.environ.get("JENKINS_TOKEN")
 JENKINS_TOKEN = os.environ.get("JENKINS_TOKEN")
 
 # CORS(app)
