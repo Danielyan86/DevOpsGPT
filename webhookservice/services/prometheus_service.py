@@ -1,12 +1,13 @@
 import requests
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
+from config.settings import PROMETHEUS_BASE_URL
 
 
 class PrometheusService:
-    def __init__(self, base_url: str = "http://localhost:9090"):
-        self.base_url = base_url
-        self.api_url = f"{base_url}/api/v1"
+    def __init__(self):
+        self.base_url = PROMETHEUS_BASE_URL
+        self.api_url = f"{self.base_url}/api/v1"
 
     def query(self, query: str, time: Optional[str] = None) -> Dict[str, Any]:
         """

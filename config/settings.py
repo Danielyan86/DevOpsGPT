@@ -9,8 +9,12 @@ JENKINS_TOKEN = os.environ.get("JENKINS_TOKEN")
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 
 # Dify Configuration
-DIFY_DEPLOY_BOT_API_KEY = os.environ.get("DIFY_DEPLOY_BOT_API_KEY")
-DIFY_API_ENDPOINT = "http://127.0.0.1/v1/chat-messages"
+DIFY_DEPLOY_BOT_API_KEY = os.environ.get("DIFY_DEPLOY_BOT_API_KEY", "")
+DIFY_API_ENDPOINT = os.environ.get("DIFY_API_ENDPOINT")
+DIFY_MONITOR_BOT_API_KEY = os.environ.get("DIFY_MONITOR_BOT_API_KEY", "")
+
+# Prometheus Configuration
+PROMETHEUS_BASE_URL = os.environ.get("PROMETHEUS_BASE_URL")
 
 # Flask Configuration
 FLASK_HOST = "0.0.0.0"
@@ -26,3 +30,9 @@ def validate_config():
         raise ValueError("SLACK_BOT_TOKEN environment variable is not set")
     if not DIFY_DEPLOY_BOT_API_KEY:
         raise ValueError("DIFY_DEPLOY_BOT_API_KEY environment variable is not set")
+    if not DIFY_MONITOR_BOT_API_KEY:
+        raise ValueError("DIFY_MONITOR_BOT_API_KEY environment variable is not set")
+    if not DIFY_API_ENDPOINT:
+        raise ValueError("DIFY_API_ENDPOINT environment variable is not set")
+    if not PROMETHEUS_BASE_URL:
+        raise ValueError("PROMETHEUS_BASE_URL environment variable is not set")

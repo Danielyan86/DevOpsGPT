@@ -1,16 +1,25 @@
 from slack_sdk import WebClient
 from config.settings import SLACK_BOT_TOKEN
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-def send_slack_message(channel_id: str, message: str):
-    """Send a simple text message to Slack channel"""
+def send_slack_message(channel_id: str, message: str, blocks: list = None) -> None:
+    """Send a message to a Slack channel"""
     try:
         client = WebClient(token=SLACK_BOT_TOKEN)
-        response = client.chat_postMessage(channel=channel_id, text=message)
-        return response
+        params = {
+            "channel": channel_id,
+            "text": message,
+        }
+        if blocks:
+            params["blocks"] = blocks
+
+        client.chat_postMessage(**params)
     except Exception as e:
-        print(f"Error sending message: {str(e)}")
-        return None
+        logger.error(f"Error sending Slack message: {str(e)}")
+        raise
 
 
 def send_interactive_message(
@@ -26,5 +35,5 @@ def send_interactive_message(
         )
         return response
     except Exception as e:
-        print(f"Error sending interactive message: {str(e)}")
+        logger.error(f"Error sending interactive message: {str(e)}")
         return None
