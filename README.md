@@ -51,7 +51,7 @@ This project implements DevOpsGPT/AIOps concepts by integrating various tools an
 
 - config the interactivity & shortcuts
   this allows the slack bot to send message back to server
-  ![alt text](./docs/pictures/slack_interactivities_and_shortcuts.png)
+  ![alt text](./docs/pictures/slack_interactivies_shortcuts.png)
 - this allows the slack bot to send message
   ![alt text](./docs/pictures/slack_event_subscriptions.png)
 
