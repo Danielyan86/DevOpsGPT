@@ -10,18 +10,17 @@
         <mxCell id="CYpEhEliiHO1DW0B8zgd-3" value="Local environment" style="swimlane;whiteSpace=wrap" vertex="1" parent="1">
           <mxGeometry x="444.5" y="127" width="355.5" height="572" as="geometry" />
         </mxCell>
-        <mxCell id="CYpEhEliiHO1DW0B8zgd-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="CYpEhEliiHO1DW0B8zgd-3" target="CYpEhEliiHO1DW0B8zgd-10">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="76" y="426" />
-              <mxPoint x="76" y="132" />
-              <mxPoint x="133" y="132" />
-            </Array>
-            <mxPoint x="103.24999999999977" y="426.14285714285734" as="sourcePoint" />
-          </mxGeometry>
-        </mxCell>
         <mxCell id="CYpEhEliiHO1DW0B8zgd-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="CYpEhEliiHO1DW0B8zgd-3" source="CYpEhEliiHO1DW0B8zgd-7" target="CYpEhEliiHO1DW0B8zgd-10">
           <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CYpEhEliiHO1DW0B8zgd-28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="CYpEhEliiHO1DW0B8zgd-3" source="CYpEhEliiHO1DW0B8zgd-7" target="CYpEhEliiHO1DW0B8zgd-10">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="83" y="323" />
+              <mxPoint x="83" y="132" />
+              <mxPoint x="118" y="132" />
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="CYpEhEliiHO1DW0B8zgd-7" value="&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;service&lt;/div&gt;" style="points=[];aspect=fixed;html=1;align=center;shadow=0;dashed=0;fillColor=#FF6A00;strokeColor=none;shape=mxgraph.alibaba_cloud.webplus_web_app_service;" vertex="1" parent="CYpEhEliiHO1DW0B8zgd-3">
           <mxGeometry x="105.3" y="292" width="54.900000000000006" height="54.900000000000006" as="geometry" />
