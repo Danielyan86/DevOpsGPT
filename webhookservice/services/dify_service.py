@@ -1,18 +1,18 @@
 import json
 import requests
 from typing import Dict, Optional
-from config.settings import DIFY_API_KEY, DIFY_API_ENDPOINT
+from config.settings import DIFY_DEPLOY_BOT_API_KEY, DIFY_API_ENDPOINT
 
 
 def parse_deployment_intent(message: str) -> Optional[Dict]:
-    """Parse natural language deployment request using local Dify API"""
+    """Parse deployment intent from natural language using Dify API"""
     try:
         print(f"\n=== Processing Natural Language Request ===")
         print(f"Input message: {message}")
 
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {DIFY_API_KEY}",
+            "Authorization": f"Bearer {DIFY_DEPLOY_BOT_API_KEY}",
         }
 
         payload = json.dumps(

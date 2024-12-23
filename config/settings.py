@@ -9,7 +9,7 @@ JENKINS_TOKEN = os.environ.get("JENKINS_TOKEN")
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 
 # Dify Configuration
-DIFY_API_KEY = os.environ.get("DIFY_API_KEY")
+DIFY_DEPLOY_BOT_API_KEY = os.environ.get("DIFY_DEPLOY_BOT_API_KEY")
 DIFY_API_ENDPOINT = "http://127.0.0.1/v1/chat-messages"
 
 # Flask Configuration
@@ -24,5 +24,5 @@ def validate_config():
         raise ValueError("JENKINS_TOKEN environment variable is not set")
     if not SLACK_BOT_TOKEN:
         raise ValueError("SLACK_BOT_TOKEN environment variable is not set")
-    if not DIFY_API_KEY:
-        raise ValueError("DIFY_API_KEY environment variable is not set")
+    if not DIFY_DEPLOY_BOT_API_KEY:
+        raise ValueError("DIFY_DEPLOY_BOT_API_KEY environment variable is not set")

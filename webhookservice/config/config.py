@@ -8,7 +8,7 @@ class Config:
     JENKINS_URL: str = os.getenv("JENKINS_URL")
     JENKINS_USER: str = os.getenv("JENKINS_USER")
     JENKINS_TOKEN: str = os.getenv("JENKINS_TOKEN")
-    DIFY_API_KEY: str = os.getenv("DIFY_API_KEY")
+    DIFY_DEPLOY_BOT_API_KEY: str = os.getenv("DIFY_DEPLOY_BOT_API_KEY")
     DIFY_API_ENDPOINT: str = os.getenv("DIFY_API_ENDPOINT")
 
     @classmethod
