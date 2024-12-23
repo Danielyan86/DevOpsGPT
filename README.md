@@ -47,6 +47,14 @@ This project implements DevOpsGPT/AIOps concepts by integrating various tools an
 - set jenkins token
   ![alt text](./docs/pictures/jenkins_token.png)
 
+# slack configuration
+
+- config the interactivity & shortcuts
+  this allows the slack bot to send message back to server
+  ![alt text](./docs/pictures/slack_interactivities_and_shortcuts.png)
+- this allows the slack bot to send message
+  ![alt text](./docs/pictures/slack_event_subscriptions.png)
+
 ## Start Prometheus server
 
 docker run -d --name prometheus --restart unless-stopped -p 9090:9090 -v $(pwd)/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus:latest --config.file=/etc/prometheus/prometheus.yml --web.enable-lifecycle
