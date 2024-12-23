@@ -7,13 +7,6 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]
 
-  - job_name: "docker"
-    static_configs:
-      - targets: ["docker.for.mac.localhost:9323"]
-
   - job_name: "local_service"
-    dns_sd_configs:
-      - names:
-          - todo-app
-        type: "A"
-        port: 3001
+    static_configs:
+      - targets: ["todo-app:3001"]
