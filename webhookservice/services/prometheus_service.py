@@ -47,7 +47,6 @@ class PrometheusService:
         """
         metrics = {}
         logger = logging.getLogger(__name__)
-        logger.info(f"Getting process metrics for metric: {metric_name}")
 
         try:
             # Map common metric names to actual Prometheus metrics
@@ -60,14 +59,12 @@ class PrometheusService:
 
             # If metric_name is 'all' or None, query all metrics
             if not metric_name or metric_name.lower() == "all":
-                logger.info("Querying all metrics")
                 # CPU Usage
                 cpu_result = self.query(metric_mapping["cpu"])
                 if cpu_result["data"]["result"]:
                     metrics["cpu_usage"] = float(
                         cpu_result["data"]["result"][0]["value"][1]
                     )
-                    logger.info(f"Got CPU usage: {metrics['cpu_usage']}")
 
                 # Memory Usage
                 memory_result = self.query(metric_mapping["memory"])
@@ -75,7 +72,6 @@ class PrometheusService:
                     metrics["memory_usage"] = float(
                         memory_result["data"]["result"][0]["value"][1]
                     )
-                    logger.info(f"Got memory usage: {metrics['memory_usage']}")
             else:
                 # Convert common names to actual metrics
                 actual_metric = None
@@ -88,29 +84,18 @@ class PrometheusService:
                             break
 
                 if actual_metric:
-                    logger.info(f"Querying specific metric: {actual_metric}")
                     result = self.query(actual_metric)
-                    logger.debug(f"Query result: {result}")
-
                     if result["data"]["result"]:
                         value = float(result["data"]["result"][0]["value"][1])
-                        logger.info(f"Got value {value} for metric {actual_metric}")
                         if "cpu" in actual_metric.lower():
                             metrics["cpu_usage"] = value
-                            logger.info("Stored as CPU usage")
                         elif "memory" in actual_metric.lower():
                             metrics["memory_usage"] = value
-                            logger.info("Stored as memory usage")
-                    else:
-                        logger.warning(f"No results found for metric: {actual_metric}")
-                else:
-                    logger.warning(f"Unknown metric name: {metric_name}")
 
-            logger.info(f"Returning metrics: {metrics}")
             return metrics
 
         except Exception as e:
-            logger.error(f"Error getting process metrics: {str(e)}", exc_info=True)
+            logger.error(f"Error getting process metrics: {str(e)}")
             return metrics
 
     def get_metrics_range(self, metric_name: str, hours: int = 1) -> Dict[str, Any]:

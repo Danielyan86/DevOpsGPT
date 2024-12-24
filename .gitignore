@@ -171,3 +171,5 @@ nohup.out
 
 .vscode/*
 todo.md
+.DS_Store
+docs/.DS_Store

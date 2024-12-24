@@ -96,9 +96,6 @@ def parse_monitoring_intent(message: str) -> Dict[str, Any]:
     - message: The response message
     """
     try:
-        logger.info(f"\n=== Processing Monitoring Request ===")
-        logger.info(f"Input message: {message}")
-
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {DIFY_MONITOR_BOT_API_KEY}",
@@ -115,16 +112,12 @@ def parse_monitoring_intent(message: str) -> Dict[str, Any]:
             }
         )
 
-        logger.info(f"Sending request to Dify with payload: {payload}")
-
         response = requests.post(
             DIFY_API_ENDPOINT,
             headers=headers,
             data=payload,
             stream=True,
         )
-
-        logger.info(f"Dify API Response Status: {response.status_code}")
 
         if response.status_code != 200:
             logger.error(f"Error from Dify API: {response.text}")
@@ -137,22 +130,17 @@ def parse_monitoring_intent(message: str) -> Dict[str, Any]:
                 line_str = line.decode("utf-8").replace("data: ", "")
                 try:
                     data = json.loads(line_str)
-                    logger.debug(f"Received data from Dify: {data}")
                     if data.get("event") == "agent_thought":
                         thought_content = data.get("thought", "")
                         if thought_content:
                             try:
                                 thought_json = json.loads(thought_content)
-                                logger.info(f"Parsed thought JSON: {thought_json}")
 
                                 # Check if this is a help or non-monitoring message
                                 if (
                                     "type" in thought_json
                                     and thought_json["type"] == "help"
                                 ):
-                                    logger.info(
-                                        f"Received help message: {thought_json}"
-                                    )
                                     return thought_json
 
                                 # Parse monitoring parameters
@@ -161,36 +149,24 @@ def parse_monitoring_intent(message: str) -> Dict[str, Any]:
                                         "query_type": thought_json.get(
                                             "query_type", "current"
                                         ),
-                                        "metric": thought_json.get(
-                                            "metric", "todo_process_cpu_seconds_total"
-                                        ),
+                                        "metric": thought_json.get("metric", "all"),
                                         "hours": int(thought_json.get("hours", 1)),
                                     }
-                                    logger.info(
-                                        f"Parsed monitoring parameters: {parsed_params}"
-                                    )
                                     return parsed_params
 
                                 # If we got JSON but it's not in the expected format
-                                logger.warning(
-                                    f"Unexpected response format: {thought_json}"
-                                )
                                 return {"type": "unknown", "message": str(thought_json)}
 
-                            except json.JSONDecodeError as e:
-                                logger.info(
-                                    f"Non-JSON thought content: {thought_content}"
-                                )
+                            except json.JSONDecodeError:
                                 # Return the raw thought content for non-JSON responses
                                 return {"type": "text", "message": thought_content}
                 except json.JSONDecodeError:
                     continue
 
-        logger.warning("No valid parameters found in response")
         return None
 
     except Exception as e:
-        logger.error(f"Error in parse_monitoring_intent: {str(e)}", exc_info=True)
+        logger.error(f"Error in parse_monitoring_intent: {str(e)}")
         return None
 
 
@@ -207,7 +183,6 @@ def send_metrics_to_dify(metrics: dict) -> dict:
     try:
         # Convert metrics to standard JSON format
         metrics_json = json.dumps(metrics)
-        logger.info("Sending metrics to Dify for analysis")
 
         # Prepare the request to Dify's MonitorBot API
         headers = {
@@ -246,37 +221,22 @@ def send_metrics_to_dify(metrics: dict) -> dict:
         for line in response.iter_lines():
             if line:
                 line_str = line.decode("utf-8").replace("data: ", "")
-                logger.debug(f"Received line from Dify: {line_str}")
                 try:
                     data = json.loads(line_str)
-                    logger.debug(f"Parsed response data: {data}")
-
-                    # Check for different event types
                     if data.get("event") == "message":
                         current = data.get("answer", "")
                         if current:
                             analysis = current
-                            logger.info(f"Got analysis from message event: {analysis}")
                     elif data.get("event") == "agent_thought":
                         thought = data.get("thought", "")
                         if thought:
                             analysis = thought
-                            logger.info(f"Got analysis from agent_thought: {analysis}")
                     elif data.get("event") == "end":
                         final_answer = data.get("answer", "")
                         if final_answer:
                             analysis = final_answer
-                            logger.info(
-                                f"Got final analysis from end event: {analysis}"
-                            )
-                except json.JSONDecodeError as e:
-                    logger.error(
-                        f"Failed to parse line as JSON: {line_str}, error: {str(e)}"
-                    )
+                except json.JSONDecodeError:
                     continue
-
-        if not analysis:
-            logger.warning("No analysis was received from Dify")
 
         return {
             "analysis": analysis if analysis else "No analysis available",

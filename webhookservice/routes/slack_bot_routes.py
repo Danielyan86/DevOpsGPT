@@ -264,11 +264,7 @@ def handle_monitor_events():
                 if result.get("query_type") == "current":
                     # Get specific metric if provided
                     metric_name = result.get("metric")
-                    logger.info(f"Received metric from Dify: {metric_name}")
-                    logger.info(f"Full Dify result: {result}")
-
                     metrics = prometheus_service.get_process_metrics(metric_name)
-                    logger.info(f"Retrieved metrics: {metrics}")
 
                     # Add server time to metrics
                     metrics["server_time"] = datetime.now().strftime(
