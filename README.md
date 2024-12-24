@@ -1,10 +1,16 @@
-# DevOpsGPT
+# Introduction
 
 A ChatOps solution that enables natural language-driven DevOps operations by integrating various tools and LLMs.
 
 ## Overview
 
-This project implements DevOpsGPT/AIOps concepts by creating a system that allows developers to trigger deployments using natural language commands. It integrates various tools and services to provide a seamless ChatOps experience.
+This project implements ChatOps/AIOps concepts by creating a system that allows developers to trigger deployments using natural language commands. It integrates various tools and services to provide a seamless ChatOps experience.
+
+## architecture
+
+This is high level architecture, some tool details are not shown here, e.g: ngrok, jenkins agent, etc.
+Monitor architecture is shown below:
+![Monitor Architecture](./docs/pictures/monitor_architecture.png)
 
 ## Features
 
