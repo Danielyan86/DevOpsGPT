@@ -6,7 +6,10 @@ JENKINS_USER = os.environ.get("JENKINS_USER")
 if not JENKINS_USER:
     raise ValueError("JENKINS_USER environment variable is not set")
 JENKINS_TOKEN = os.environ.get("JENKINS_TOKEN")
-SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
+
+# Slack Configuration
+SLACK_BOT_DEPLOY_TOKEN = os.environ.get("SLACK_BOT_DEPLOY_TOKEN")
+SLACK_BOT_MONITOR_TOKEN = os.environ.get("SLACK_BOT_MONITOR_TOKEN")
 
 # Dify Configuration
 DIFY_DEPLOY_BOT_API_KEY = os.environ.get("DIFY_DEPLOY_BOT_API_KEY", "")
@@ -26,8 +29,10 @@ def validate_config():
     """Validate required environment variables"""
     if not JENKINS_TOKEN:
         raise ValueError("JENKINS_TOKEN environment variable is not set")
-    if not SLACK_BOT_TOKEN:
-        raise ValueError("SLACK_BOT_TOKEN environment variable is not set")
+    if not SLACK_BOT_DEPLOY_TOKEN:
+        raise ValueError("SLACK_BOT_DEPLOY_TOKEN environment variable is not set")
+    if not SLACK_BOT_MONITOR_TOKEN:
+        raise ValueError("SLACK_BOT_MONITOR_TOKEN environment variable is not set")
     if not DIFY_DEPLOY_BOT_API_KEY:
         raise ValueError("DIFY_DEPLOY_BOT_API_KEY environment variable is not set")
     if not DIFY_MONITOR_BOT_API_KEY:

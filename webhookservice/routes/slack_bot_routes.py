@@ -9,11 +9,10 @@ from webhookservice.services.dify_service import (
 from webhookservice.services.slack_service import (
     send_slack_message,
     send_interactive_message,
+    update_message,
 )
 from webhookservice.services.jenkins_service import trigger_jenkins_build, BuildResponse
 from webhookservice.services.prometheus_service import PrometheusService
-from slack_sdk import WebClient
-from config.settings import SLACK_BOT_TOKEN
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -22,22 +21,6 @@ prometheus_service = PrometheusService()
 
 # Store processed event IDs to prevent duplicates
 processed_events = set()
-
-
-def update_message(channel_id: str, ts: str, blocks: list, text: str):
-    """Helper function to update Slack messages"""
-    try:
-        client = WebClient(token=SLACK_BOT_TOKEN)
-        return client.chat_update(
-            channel=channel_id,
-            ts=ts,
-            blocks=blocks,
-            text=text,
-            replace_original=True,
-        )
-    except Exception as e:
-        logger.error(f"Error updating Slack message: {str(e)}")
-        raise
 
 
 @slack_events_bp.route("/deploy/events", methods=["POST"])
@@ -73,7 +56,7 @@ def handle_deploy_events():
             # Check if this is a non-deployment message
             if "message" in result:
                 logger.info(f"Received non-deployment response: {result['message']}")
-                send_slack_message(channel_id, result["message"])
+                send_slack_message(channel_id, result["message"], is_monitor=False)
                 return jsonify({"ok": True}), 200
 
             # Continue with deployment confirmation
@@ -124,6 +107,7 @@ def handle_deploy_events():
                 channel_id,
                 confirmation_message["blocks"],
                 fallback_text=f"Deployment confirmation request for branch {result['branch']} to {result['environment']}",
+                is_monitor=False,
             )
             return jsonify({"ok": True}), 200
 
@@ -175,6 +159,7 @@ def handle_deploy_actions():
                         }
                     ],
                     f"Deployment started for {deployment_params['branch']}",
+                    is_monitor=False,
                 )
                 return jsonify({"ok": True})
             else:
@@ -193,6 +178,7 @@ def handle_deploy_actions():
                         }
                     ],
                     f"Deployment failed: {response.message}",
+                    is_monitor=False,
                 )
                 return jsonify({"ok": True})
 
@@ -208,6 +194,7 @@ def handle_deploy_actions():
                     }
                 ],
                 "Deployment cancelled",
+                is_monitor=False,
             )
             return jsonify({"ok": True})
 
@@ -294,7 +281,7 @@ def handle_monitor_events():
                 formatted_metrics = json.dumps(metrics, indent=2)
                 send_slack_message(
                     channel_id,
-                    f"📊 *Monitoring Results*\n```{formatted_metrics}```",
+                    f"�� *Monitoring Results*\n```{formatted_metrics}```",
                     blocks=[
                         {
                             "type": "section",
@@ -318,13 +305,14 @@ def handle_monitor_events():
                             ],
                         },
                     ],
+                    is_monitor=True,
                 )
                 return jsonify({"ok": True}), 200
 
             except Exception as e:
                 error_msg = f"Error fetching metrics: {str(e)}"
                 logger.error(error_msg)
-                send_slack_message(channel_id, f"❌ {error_msg}")
+                send_slack_message(channel_id, f"❌ {error_msg}", is_monitor=True)
                 return jsonify({"ok": True}), 200
 
         return jsonify({"ok": True}), 200
@@ -384,6 +372,7 @@ def handle_monitor_actions():
                         },
                     ],
                     f"Updated metrics at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                    is_monitor=True,
                 )
                 return jsonify({"ok": True})
 
@@ -403,6 +392,7 @@ def handle_monitor_actions():
                         }
                     ],
                     error_msg,
+                    is_monitor=True,
                 )
                 return jsonify({"ok": True})
 

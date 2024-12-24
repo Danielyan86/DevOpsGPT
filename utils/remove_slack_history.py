@@ -1,16 +1,19 @@
-import requests
-import time
 import os
 import sys
-
-# Add project root to Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from config.settings import SLACK_BOT_TOKEN
+import time
+import logging
+from datetime import datetime, timedelta
 from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
+from config.settings import SLACK_BOT_DEPLOY_TOKEN, SLACK_BOT_MONITOR_TOKEN
 
-# Slack API Token from environment
-api_token = SLACK_BOT_TOKEN
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Initialize the Slack client with your bot token
+# We'll use deploy token as default for cleanup
+api_token = SLACK_BOT_DEPLOY_TOKEN
 
 # Slack API URLs
 history_url = "https://slack.com/api/conversations.history"
