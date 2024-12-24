@@ -5,6 +5,7 @@ import logging
 from webhookservice.services.dify_service import (
     parse_deployment_intent,
     parse_monitoring_intent,
+    send_metrics_to_dify,
 )
 from webhookservice.services.slack_service import (
     send_slack_message,
@@ -277,34 +278,86 @@ def handle_monitor_events():
                     query = result.get("query", result.get("metric_name", ""))
                     metrics = prometheus_service.query(query)
 
-                # Format and send the response
-                formatted_metrics = json.dumps(metrics, indent=2)
+                # Send metrics to Dify's MonitorBot API
+                dify_response = send_metrics_to_dify(metrics)
+
+                # Format metrics for Slack
+                raw_metrics = dify_response["raw_metrics"]
+                formatted_message = [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "🔍 *System Health Report*",
+                        },
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "*Current Metrics:*",
+                        },
+                    },
+                    {
+                        "type": "section",
+                        "fields": [
+                            {
+                                "type": "mrkdwn",
+                                "text": f"💻 *CPU Usage:*\n`{raw_metrics.get('cpu_usage', 'N/A'):.2f}%`",
+                            },
+                            {
+                                "type": "mrkdwn",
+                                "text": f"💾 *Memory Usage:*\n`{raw_metrics.get('memory_usage', 'N/A') / 1024 / 1024:.2f} MB`",
+                            },
+                        ],
+                    },
+                    {
+                        "type": "context",
+                        "elements": [
+                            {
+                                "type": "mrkdwn",
+                                "text": f"🕒 Server Time: `{raw_metrics.get('server_time', 'N/A')}`",
+                            }
+                        ],
+                    },
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "📊 *Analysis*",
+                        },
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": dify_response.get(
+                                "analysis", "No analysis available"
+                            ).replace("**", "*"),
+                        },
+                    },
+                    {
+                        "type": "actions",
+                        "elements": [
+                            {
+                                "type": "button",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "🔄 Refresh",
+                                    "emoji": True,
+                                },
+                                "style": "primary",
+                                "action_id": "refresh_metrics",
+                            }
+                        ],
+                    },
+                ]
+
                 send_slack_message(
                     channel_id,
-                    f"�� *Monitoring Results*\n```{formatted_metrics}```",
-                    blocks=[
-                        {
-                            "type": "section",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": f"📊 *Monitoring Results*\n```{formatted_metrics}```",
-                            },
-                        },
-                        {
-                            "type": "actions",
-                            "elements": [
-                                {
-                                    "type": "button",
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": "🔄 Refresh",
-                                        "emoji": True,
-                                    },
-                                    "action_id": "refresh_metrics",
-                                }
-                            ],
-                        },
-                    ],
+                    "System Health Report",
+                    blocks=formatted_message,
                     is_monitor=True,
                 )
                 return jsonify({"ok": True}), 200
@@ -342,36 +395,89 @@ def handle_monitor_actions():
                 metrics = prometheus_service.get_process_metrics()
                 # Add server time to metrics
                 metrics["server_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                formatted_metrics = json.dumps(metrics, indent=2)
+
+                # Send metrics to Dify for analysis
+                dify_response = send_metrics_to_dify(metrics)
+
+                # Format metrics for Slack
+                raw_metrics = dify_response["raw_metrics"]
+                formatted_message = [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "🔍 *System Health Report* (Refreshed)",
+                        },
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "*Current Metrics:*",
+                        },
+                    },
+                    {
+                        "type": "section",
+                        "fields": [
+                            {
+                                "type": "mrkdwn",
+                                "text": f"💻 *CPU Usage:*\n`{raw_metrics.get('cpu_usage', 'N/A'):.2f}%`",
+                            },
+                            {
+                                "type": "mrkdwn",
+                                "text": f"💾 *Memory Usage:*\n`{raw_metrics.get('memory_usage', 'N/A') / 1024 / 1024:.2f} MB`",
+                            },
+                        ],
+                    },
+                    {
+                        "type": "context",
+                        "elements": [
+                            {
+                                "type": "mrkdwn",
+                                "text": f"🕒 Server Time: `{raw_metrics.get('server_time', 'N/A')}`",
+                            }
+                        ],
+                    },
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "📊 *Analysis*",
+                        },
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": dify_response.get(
+                                "analysis", "No analysis available"
+                            ).replace("**", "*"),
+                        },
+                    },
+                    {
+                        "type": "actions",
+                        "elements": [
+                            {
+                                "type": "button",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "🔄 Refresh",
+                                    "emoji": True,
+                                },
+                                "style": "primary",
+                                "action_id": "refresh_metrics",
+                            }
+                        ],
+                    },
+                ]
 
                 # Update the original message with new metrics
                 update_message(
                     channel_id,
                     message_ts,
-                    [
-                        {
-                            "type": "section",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": f"📊 *Updated Monitoring Results*\n```{formatted_metrics}```",
-                            },
-                        },
-                        {
-                            "type": "actions",
-                            "elements": [
-                                {
-                                    "type": "button",
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": "🔄 Refresh",
-                                        "emoji": True,
-                                    },
-                                    "action_id": "refresh_metrics",
-                                }
-                            ],
-                        },
-                    ],
-                    f"Updated metrics at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                    formatted_message,
+                    "System Health Report (Refreshed)",
                     is_monitor=True,
                 )
                 return jsonify({"ok": True})

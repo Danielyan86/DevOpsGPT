@@ -195,3 +195,100 @@ def parse_monitoring_intent(message: str) -> Dict[str, Any]:
         print(f"Error in parse_monitoring_intent: {str(e)}")
         print(f"Exception type: {type(e)}")
         return None
+
+
+def send_metrics_to_dify(metrics: dict) -> dict:
+    """
+    Send monitoring metrics to Dify's MonitorBot API for analysis
+
+    Args:
+        metrics (dict): The metrics data from Prometheus
+
+    Returns:
+        dict: The analyzed response from Dify's MonitorBot
+    """
+    try:
+        # Convert metrics to standard JSON format
+        metrics_json = json.dumps(metrics)
+        logger.info("Sending metrics to Dify for analysis")
+
+        # Prepare the request to Dify's MonitorBot API
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {DIFY_MONITOR_BOT_API_KEY}",
+        }
+
+        payload = json.dumps(
+            {
+                "inputs": {},
+                "query": f"Please analyze these monitoring metrics and provide insights: {metrics_json}",
+                "response_mode": "streaming",
+                "conversation_id": "",
+                "user": "chatops-user",
+                "files": [],
+            }
+        )
+
+        # Send request to Dify API
+        response = requests.post(
+            DIFY_API_ENDPOINT,
+            headers=headers,
+            data=payload,
+            stream=True,
+        )
+
+        if response.status_code != 200:
+            logger.error(f"Error from Dify API: {response.text}")
+            return {
+                "analysis": f"Error from Dify API: {response.text}",
+                "raw_metrics": metrics,
+            }
+
+        # Process streaming response
+        analysis = ""
+        for line in response.iter_lines():
+            if line:
+                line_str = line.decode("utf-8").replace("data: ", "")
+                logger.debug(f"Received line from Dify: {line_str}")
+                try:
+                    data = json.loads(line_str)
+                    logger.debug(f"Parsed response data: {data}")
+
+                    # Check for different event types
+                    if data.get("event") == "message":
+                        current = data.get("answer", "")
+                        if current:
+                            analysis = current
+                            logger.info(f"Got analysis from message event: {analysis}")
+                    elif data.get("event") == "agent_thought":
+                        thought = data.get("thought", "")
+                        if thought:
+                            analysis = thought
+                            logger.info(f"Got analysis from agent_thought: {analysis}")
+                    elif data.get("event") == "end":
+                        final_answer = data.get("answer", "")
+                        if final_answer:
+                            analysis = final_answer
+                            logger.info(
+                                f"Got final analysis from end event: {analysis}"
+                            )
+                except json.JSONDecodeError as e:
+                    logger.error(
+                        f"Failed to parse line as JSON: {line_str}, error: {str(e)}"
+                    )
+                    continue
+
+        if not analysis:
+            logger.warning("No analysis was received from Dify")
+
+        return {
+            "analysis": analysis if analysis else "No analysis available",
+            "raw_metrics": metrics,
+        }
+
+    except Exception as e:
+        logger.error(f"Error sending metrics to Dify: {str(e)}")
+        return {
+            "analysis": f"Error analyzing metrics: {str(e)}",
+            "raw_metrics": metrics,
+        }
