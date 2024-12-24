@@ -41,8 +41,8 @@ def update_message(channel_id: str, ts: str, blocks: list, text: str):
 
 
 @slack_events_bp.route("/deploy/events", methods=["POST"])
-def handle_slack_events():
-    """Handle Slack events, specifically app_mention events"""
+def handle_deploy_events():
+    """Handle Slack events for deployment requests"""
     try:
         data = request.json
 
@@ -135,8 +135,8 @@ def handle_slack_events():
 
 
 @slack_events_bp.route("/deploy/actions", methods=["POST"])
-def handle_slack_actions():
-    """Handle interactive component actions from Slack"""
+def handle_deploy_actions():
+    """Handle interactive component actions for deployment"""
     try:
         payload = json.loads(request.form.get("payload"))
         action = payload["actions"][0]
@@ -211,17 +211,11 @@ def handle_slack_actions():
             )
             return jsonify({"ok": True})
 
+        return jsonify({"ok": True})
+
     except Exception as e:
         logger.error(f"Error handling action: {str(e)}", exc_info=True)
-        return (
-            jsonify(
-                {
-                    "response_type": "in_channel",
-                    "text": f"❌ Error processing action: {str(e)}",
-                }
-            ),
-            500,
-        )
+        return jsonify({"error": str(e)}), 500
 
 
 @slack_events_bp.route("/monitor/events", methods=["POST"])
@@ -281,6 +275,10 @@ def handle_monitor_events():
                 # Get metrics based on the query type
                 if result.get("query_type") == "current":
                     metrics = prometheus_service.get_process_metrics()
+                    # Add server time to metrics
+                    metrics["server_time"] = datetime.now().strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
                 elif result.get("query_type") == "range":
                     metrics = prometheus_service.get_metrics_range(
                         metric_name=result.get(
@@ -354,6 +352,8 @@ def handle_monitor_actions():
             # Handle refresh metrics action
             try:
                 metrics = prometheus_service.get_process_metrics()
+                # Add server time to metrics
+                metrics["server_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 formatted_metrics = json.dumps(metrics, indent=2)
 
                 # Update the original message with new metrics
