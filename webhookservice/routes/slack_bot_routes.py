@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 slack_events_bp = Blueprint("slack_events", __name__)
 prometheus_service = PrometheusService()
 
+# Store processed event IDs to prevent duplicates
+processed_events = set()
+
 
 def update_message(channel_id: str, ts: str, blocks: list, text: str):
     """Helper function to update Slack messages"""
@@ -230,6 +233,17 @@ def handle_monitor_events():
         # Handle Slack URL verification
         if data.get("type") == "url_verification":
             return jsonify({"challenge": data.get("challenge")}), 200
+
+        # Check for duplicate events
+        event_id = data.get("event_id")
+        if event_id:
+            if event_id in processed_events:
+                logger.info(f"Skipping duplicate event: {event_id}")
+                return jsonify({"ok": True}), 200
+            processed_events.add(event_id)
+            # Keep the set size manageable
+            if len(processed_events) > 1000:
+                processed_events.clear()
 
         # Process app_mention events
         if data.get("event", {}).get("type") == "app_mention":
