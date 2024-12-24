@@ -88,16 +88,16 @@ def parse_monitoring_intent(message: str) -> Dict[str, Any]:
     """
     Parse monitoring requests using Dify API
     Returns a dictionary containing:
-    - metric_name: The name of the metric to query
-    - time_range: Time range for the query (in hours)
+    - metric: The name of the metric to query
+    - hours: Time range for the query (in hours)
     - query_type: 'current', 'range', or 'custom'
     Or for non-monitoring queries:
     - type: 'help' or other type
     - message: The response message
     """
     try:
-        print(f"\n=== Processing Monitoring Request ===")
-        print(f"Input message: {message}")
+        logger.info(f"\n=== Processing Monitoring Request ===")
+        logger.info(f"Input message: {message}")
 
         headers = {
             "Content-Type": "application/json",
@@ -115,7 +115,7 @@ def parse_monitoring_intent(message: str) -> Dict[str, Any]:
             }
         )
 
-        print(f"Sending request to Dify with payload: {payload}")
+        logger.info(f"Sending request to Dify with payload: {payload}")
 
         response = requests.post(
             DIFY_API_ENDPOINT,
@@ -124,31 +124,35 @@ def parse_monitoring_intent(message: str) -> Dict[str, Any]:
             stream=True,
         )
 
-        print(f"Dify API Response Status: {response.status_code}")
+        logger.info(f"Dify API Response Status: {response.status_code}")
 
         if response.status_code != 200:
-            print(f"Error from Dify API: {response.text}")
+            logger.error(f"Error from Dify API: {response.text}")
             return {"error": response.text}
 
         thought_content = None
 
         for line in response.iter_lines():
             if line:
-                line = line.decode("utf-8").replace("data: ", "")
+                line_str = line.decode("utf-8").replace("data: ", "")
                 try:
-                    data = json.loads(line)
+                    data = json.loads(line_str)
+                    logger.debug(f"Received data from Dify: {data}")
                     if data.get("event") == "agent_thought":
                         thought_content = data.get("thought", "")
                         if thought_content:
                             try:
                                 thought_json = json.loads(thought_content)
+                                logger.info(f"Parsed thought JSON: {thought_json}")
 
                                 # Check if this is a help or non-monitoring message
                                 if (
                                     "type" in thought_json
                                     and thought_json["type"] == "help"
                                 ):
-                                    print(f"Received help message: {thought_json}")
+                                    logger.info(
+                                        f"Received help message: {thought_json}"
+                                    )
                                     return thought_json
 
                                 # Parse monitoring parameters
@@ -157,43 +161,36 @@ def parse_monitoring_intent(message: str) -> Dict[str, Any]:
                                         "query_type": thought_json.get(
                                             "query_type", "current"
                                         ),
-                                        "metric_name": thought_json.get(
-                                            "metric_name",
-                                            "todo_process_cpu_seconds_total",
+                                        "metric": thought_json.get(
+                                            "metric", "todo_process_cpu_seconds_total"
                                         ),
-                                        "time_range": int(
-                                            thought_json.get("time_range", 1)
-                                        ),
+                                        "hours": int(thought_json.get("hours", 1)),
                                     }
-                                    # For custom queries, include the original query
-                                    if (
-                                        thought_json.get("query_type") == "custom"
-                                        and "query" in thought_json
-                                    ):
-                                        parsed_params["query"] = thought_json["query"]
-
-                                    print(
+                                    logger.info(
                                         f"Parsed monitoring parameters: {parsed_params}"
                                     )
                                     return parsed_params
 
                                 # If we got JSON but it's not in the expected format
-                                print(f"Unexpected response format: {thought_json}")
+                                logger.warning(
+                                    f"Unexpected response format: {thought_json}"
+                                )
                                 return {"type": "unknown", "message": str(thought_json)}
 
                             except json.JSONDecodeError as e:
-                                print(f"Non-JSON thought content: {thought_content}")
+                                logger.info(
+                                    f"Non-JSON thought content: {thought_content}"
+                                )
                                 # Return the raw thought content for non-JSON responses
                                 return {"type": "text", "message": thought_content}
                 except json.JSONDecodeError:
                     continue
 
-        print("No valid parameters found in response")
+        logger.warning("No valid parameters found in response")
         return None
 
     except Exception as e:
-        print(f"Error in parse_monitoring_intent: {str(e)}")
-        print(f"Exception type: {type(e)}")
+        logger.error(f"Error in parse_monitoring_intent: {str(e)}", exc_info=True)
         return None
 
 

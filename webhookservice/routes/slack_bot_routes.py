@@ -262,7 +262,14 @@ def handle_monitor_events():
             try:
                 # Get metrics based on the query type
                 if result.get("query_type") == "current":
-                    metrics = prometheus_service.get_process_metrics()
+                    # Get specific metric if provided
+                    metric_name = result.get("metric")
+                    logger.info(f"Received metric from Dify: {metric_name}")
+                    logger.info(f"Full Dify result: {result}")
+
+                    metrics = prometheus_service.get_process_metrics(metric_name)
+                    logger.info(f"Retrieved metrics: {metrics}")
+
                     # Add server time to metrics
                     metrics["server_time"] = datetime.now().strftime(
                         "%Y-%m-%d %H:%M:%S"
@@ -270,12 +277,12 @@ def handle_monitor_events():
                 elif result.get("query_type") == "range":
                     metrics = prometheus_service.get_metrics_range(
                         metric_name=result.get(
-                            "metric_name", "todo_process_cpu_seconds_total"
+                            "metric", "todo_process_cpu_seconds_total"
                         ),
-                        hours=int(result.get("time_range", 1)),
+                        hours=int(result.get("hours", 1)),
                     )
                 else:  # custom query
-                    query = result.get("query", result.get("metric_name", ""))
+                    query = result.get("query", result.get("metric", ""))
                     metrics = prometheus_service.query(query)
 
                 # Send metrics to Dify's MonitorBot API
@@ -283,6 +290,24 @@ def handle_monitor_events():
 
                 # Format metrics for Slack
                 raw_metrics = dify_response["raw_metrics"]
+
+                # Prepare metric fields based on available data
+                metric_fields = []
+                if "cpu_usage" in raw_metrics:
+                    metric_fields.append(
+                        {
+                            "type": "mrkdwn",
+                            "text": f"💻 *CPU Usage:*\n`{raw_metrics['cpu_usage']:.2f}%`",
+                        }
+                    )
+                if "memory_usage" in raw_metrics:
+                    metric_fields.append(
+                        {
+                            "type": "mrkdwn",
+                            "text": f"💾 *Memory Usage:*\n`{raw_metrics['memory_usage'] / 1024 / 1024:.2f} MB`",
+                        }
+                    )
+
                 formatted_message = [
                     {
                         "type": "section",
@@ -298,61 +323,67 @@ def handle_monitor_events():
                             "text": "*Current Metrics:*",
                         },
                     },
-                    {
-                        "type": "section",
-                        "fields": [
-                            {
-                                "type": "mrkdwn",
-                                "text": f"💻 *CPU Usage:*\n`{raw_metrics.get('cpu_usage', 'N/A'):.2f}%`",
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"💾 *Memory Usage:*\n`{raw_metrics.get('memory_usage', 'N/A') / 1024 / 1024:.2f} MB`",
-                            },
-                        ],
-                    },
-                    {
-                        "type": "context",
-                        "elements": [
-                            {
-                                "type": "mrkdwn",
-                                "text": f"🕒 Server Time: `{raw_metrics.get('server_time', 'N/A')}`",
-                            }
-                        ],
-                    },
-                    {"type": "divider"},
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "📊 *Analysis*",
-                        },
-                    },
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": dify_response.get(
-                                "analysis", "No analysis available"
-                            ).replace("**", "*"),
-                        },
-                    },
-                    {
-                        "type": "actions",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "🔄 Refresh",
-                                    "emoji": True,
-                                },
-                                "style": "primary",
-                                "action_id": "refresh_metrics",
-                            }
-                        ],
-                    },
                 ]
+
+                # Add metrics section if we have any metrics
+                if metric_fields:
+                    formatted_message.append(
+                        {
+                            "type": "section",
+                            "fields": metric_fields,
+                        }
+                    )
+
+                # Add server time if available
+                if "server_time" in raw_metrics:
+                    formatted_message.append(
+                        {
+                            "type": "context",
+                            "elements": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f"🕒 Server Time: `{raw_metrics['server_time']}`",
+                                }
+                            ],
+                        }
+                    )
+
+                formatted_message.extend(
+                    [
+                        {"type": "divider"},
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "📊 *Analysis*",
+                            },
+                        },
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": dify_response.get(
+                                    "analysis", "No analysis available"
+                                ).replace("**", "*"),
+                            },
+                        },
+                        {
+                            "type": "actions",
+                            "elements": [
+                                {
+                                    "type": "button",
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": "🔄 Refresh",
+                                        "emoji": True,
+                                    },
+                                    "style": "primary",
+                                    "action_id": "refresh_metrics",
+                                }
+                            ],
+                        },
+                    ]
+                )
 
                 send_slack_message(
                     channel_id,
@@ -401,6 +432,24 @@ def handle_monitor_actions():
 
                 # Format metrics for Slack
                 raw_metrics = dify_response["raw_metrics"]
+
+                # Prepare metric fields based on available data
+                metric_fields = []
+                if "cpu_usage" in raw_metrics:
+                    metric_fields.append(
+                        {
+                            "type": "mrkdwn",
+                            "text": f"💻 *CPU Usage:*\n`{raw_metrics['cpu_usage']:.2f}%`",
+                        }
+                    )
+                if "memory_usage" in raw_metrics:
+                    metric_fields.append(
+                        {
+                            "type": "mrkdwn",
+                            "text": f"💾 *Memory Usage:*\n`{raw_metrics['memory_usage'] / 1024 / 1024:.2f} MB`",
+                        }
+                    )
+
                 formatted_message = [
                     {
                         "type": "section",
@@ -416,61 +465,67 @@ def handle_monitor_actions():
                             "text": "*Current Metrics:*",
                         },
                     },
-                    {
-                        "type": "section",
-                        "fields": [
-                            {
-                                "type": "mrkdwn",
-                                "text": f"💻 *CPU Usage:*\n`{raw_metrics.get('cpu_usage', 'N/A'):.2f}%`",
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"💾 *Memory Usage:*\n`{raw_metrics.get('memory_usage', 'N/A') / 1024 / 1024:.2f} MB`",
-                            },
-                        ],
-                    },
-                    {
-                        "type": "context",
-                        "elements": [
-                            {
-                                "type": "mrkdwn",
-                                "text": f"🕒 Server Time: `{raw_metrics.get('server_time', 'N/A')}`",
-                            }
-                        ],
-                    },
-                    {"type": "divider"},
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "📊 *Analysis*",
-                        },
-                    },
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": dify_response.get(
-                                "analysis", "No analysis available"
-                            ).replace("**", "*"),
-                        },
-                    },
-                    {
-                        "type": "actions",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "🔄 Refresh",
-                                    "emoji": True,
-                                },
-                                "style": "primary",
-                                "action_id": "refresh_metrics",
-                            }
-                        ],
-                    },
                 ]
+
+                # Add metrics section if we have any metrics
+                if metric_fields:
+                    formatted_message.append(
+                        {
+                            "type": "section",
+                            "fields": metric_fields,
+                        }
+                    )
+
+                # Add server time if available
+                if "server_time" in raw_metrics:
+                    formatted_message.append(
+                        {
+                            "type": "context",
+                            "elements": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f"🕒 Server Time: `{raw_metrics['server_time']}`",
+                                }
+                            ],
+                        }
+                    )
+
+                formatted_message.extend(
+                    [
+                        {"type": "divider"},
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "📊 *Analysis*",
+                            },
+                        },
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": dify_response.get(
+                                    "analysis", "No analysis available"
+                                ).replace("**", "*"),
+                            },
+                        },
+                        {
+                            "type": "actions",
+                            "elements": [
+                                {
+                                    "type": "button",
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": "🔄 Refresh",
+                                        "emoji": True,
+                                    },
+                                    "style": "primary",
+                                    "action_id": "refresh_metrics",
+                                }
+                            ],
+                        },
+                    ]
+                )
 
                 # Update the original message with new metrics
                 update_message(
