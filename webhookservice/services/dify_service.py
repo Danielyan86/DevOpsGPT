@@ -91,6 +91,9 @@ def parse_monitoring_intent(message: str) -> Dict[str, Any]:
     - metric_name: The name of the metric to query
     - time_range: Time range for the query (in hours)
     - query_type: 'current', 'range', or 'custom'
+    Or for non-monitoring queries:
+    - type: 'help' or other type
+    - message: The response message
     """
     try:
         print(f"\n=== Processing Monitoring Request ===")
@@ -139,21 +142,49 @@ def parse_monitoring_intent(message: str) -> Dict[str, Any]:
                         if thought_content:
                             try:
                                 thought_json = json.loads(thought_content)
-                                parsed_params = {
-                                    "query_type": thought_json.get(
-                                        "query_type", "current"
-                                    ),
-                                    "metric_name": thought_json.get(
-                                        "metric_name", "todo_process_cpu_seconds_total"
-                                    ),
-                                    "time_range": thought_json.get("time_range", 1),
-                                }
-                                print(f"Parsed monitoring parameters: {parsed_params}")
-                                return parsed_params
+
+                                # Check if this is a help or non-monitoring message
+                                if (
+                                    "type" in thought_json
+                                    and thought_json["type"] == "help"
+                                ):
+                                    print(f"Received help message: {thought_json}")
+                                    return thought_json
+
+                                # Parse monitoring parameters
+                                if "query_type" in thought_json:
+                                    parsed_params = {
+                                        "query_type": thought_json.get(
+                                            "query_type", "current"
+                                        ),
+                                        "metric_name": thought_json.get(
+                                            "metric_name",
+                                            "todo_process_cpu_seconds_total",
+                                        ),
+                                        "time_range": int(
+                                            thought_json.get("time_range", 1)
+                                        ),
+                                    }
+                                    # For custom queries, include the original query
+                                    if (
+                                        thought_json.get("query_type") == "custom"
+                                        and "query" in thought_json
+                                    ):
+                                        parsed_params["query"] = thought_json["query"]
+
+                                    print(
+                                        f"Parsed monitoring parameters: {parsed_params}"
+                                    )
+                                    return parsed_params
+
+                                # If we got JSON but it's not in the expected format
+                                print(f"Unexpected response format: {thought_json}")
+                                return {"type": "unknown", "message": str(thought_json)}
+
                             except json.JSONDecodeError as e:
                                 print(f"Non-JSON thought content: {thought_content}")
-                                # Return the raw thought content for non-monitoring responses
-                                return {"message": thought_content}
+                                # Return the raw thought content for non-JSON responses
+                                return {"type": "text", "message": thought_content}
                 except json.JSONDecodeError:
                     continue
 

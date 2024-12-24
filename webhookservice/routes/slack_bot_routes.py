@@ -247,14 +247,20 @@ def handle_monitor_events():
                 logger.warning("Failed to parse monitoring intent")
                 send_slack_message(
                     channel_id,
-                    "❌ Sorry, I couldn't understand your monitoring request. Try asking for specific metrics like CPU usage, memory usage, or custom queries.",
+                    "❌ Sorry, I couldn't understand your request. Try asking for specific metrics like CPU usage, memory usage, or custom queries.",
                 )
                 return jsonify({"ok": True}), 200
 
-            # Check if this is a non-monitoring message
-            if "message" in result:
-                logger.info(f"Received non-monitoring response: {result['message']}")
-                send_slack_message(channel_id, result["message"])
+            # Check if this is a help or non-monitoring message
+            if "type" in result:
+                if result["type"] == "help":
+                    logger.info(f"Sending help message: {result['message']}")
+                    send_slack_message(channel_id, result["message"])
+                else:
+                    logger.info(
+                        f"Received non-monitoring response: {result['message']}"
+                    )
+                    send_slack_message(channel_id, result["message"])
                 return jsonify({"ok": True}), 200
 
             try:
@@ -269,7 +275,8 @@ def handle_monitor_events():
                         hours=int(result.get("time_range", 1)),
                     )
                 else:  # custom query
-                    metrics = prometheus_service.query(result.get("query", ""))
+                    query = result.get("query", result.get("metric_name", ""))
+                    metrics = prometheus_service.query(query)
 
                 # Format and send the response
                 formatted_metrics = json.dumps(metrics, indent=2)
