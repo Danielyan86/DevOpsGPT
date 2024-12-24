@@ -18,7 +18,6 @@ def send_slack_message(
             text=message,
             blocks=blocks,
         )
-        logger.info(f"Slack response: {response}")
         return response
     except SlackApiError as e:
         logger.error(f"Error sending message to Slack: {str(e)}")
@@ -37,7 +36,6 @@ def send_interactive_message(
             blocks=blocks,
             text=fallback_text,
         )
-        logger.info(f"Slack response: {response}")
         return response
     except SlackApiError as e:
         logger.error(f"Error sending interactive message to Slack: {str(e)}")
@@ -58,7 +56,6 @@ def update_message(
             text=text,
             replace_original=True,
         )
-        logger.info(f"Slack update response: {response}")
         return response
     except SlackApiError as e:
         logger.error(f"Error updating Slack message: {str(e)}")
