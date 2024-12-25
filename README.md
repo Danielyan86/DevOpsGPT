@@ -26,9 +26,13 @@ The demo project is available in this repository: [ChatOps-Solution](https://git
 
 ### High-Level Design
 
-The system enables monitoring data retrieval and analysis through natural language commands in Slack.
+The system consists of two main architectural components:
 
-![Monitor Architecture](./docs/pictures/monitor_architecture.png)
+1. AI Agent and Monitoring Integration
+   ![Monitor Architecture](./docs/pictures/monitor_architecture.png)
+
+2. AI Agent and Deployment Integration
+   ![Deploy Architecture](./docs/pictures/deploy_architecture.png)
 
 > Note: Some implementation details are not shown (e.g., ngrok, Jenkins agent)
 
