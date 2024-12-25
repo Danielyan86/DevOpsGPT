@@ -16,6 +16,8 @@ This project implements ChatOps/AIOps concepts by creating a system that enables
 
 > While the demo runs locally, the system is designed for and supports cloud deployment.
 
+The demo project is available in this repository: [ChatOps-Solution](https://github.com/Danielyan86/DevOpsGPT_Demo)
+
 ## Architecture
 
 ### High-Level Design
@@ -167,14 +169,3 @@ docker run -d --name prometheus \
 The system supports deploying applications to different branches with multiple languages:
 
 ![Chinese Deploy Demo](./docs/pictures/Chinese_deploy.png)
-
-### Configuration Screenshots
-
-- Jenkins Agent Configuration
-  ![Jenkins Agent Setup](./docs/pictures/jenkins_agent.png)
-
-- Slack Integration Settings
-  ![Slack Configuration](./docs/pictures/slack_configuration.png)
-
-- Jenkins Token Setup
-  ![Jenkins Token](./docs/pictures/jenkins_token.png)
