@@ -4,6 +4,10 @@
 
 A ChatOps solution that enables natural language-driven DevOps operations through integration of various tools and LLMs.
 
+![Deploy Bot Demo](./docs/pictures/DeployBotDemo.gif)
+
+> The demo shows how to use natural language to trigger deployments and interact with the system through Slack.
+
 ## Overview
 
 This project implements ChatOps/AIOps concepts by creating a system that enables developers to trigger deployments using natural language commands. The system integrates various tools and services to provide a seamless ChatOps experience.
@@ -166,6 +170,4 @@ docker run -d --name prometheus \
 
 ### Natural Language Deployment
 
-The system supports deploying applications to different branches with multiple languages:
-
-![Chinese Deploy Demo](./docs/pictures/Chinese_deploy.png)
+The system supports deploying applications to different branches with multiple languages. See the demo at the top of this document.
