@@ -216,8 +216,36 @@ def send_metrics_to_dify(metrics: dict) -> dict:
         dict: The analyzed response from Dify's MonitorBot
     """
     try:
-        # Convert metrics to standard JSON format
-        metrics_json = json.dumps(metrics)
+        # Handle range query results
+        if metrics.get("data", {}).get("resultType") == "matrix" and metrics.get(
+            "data", {}
+        ).get("result"):
+            # Convert the range data to a more readable format
+            series = metrics["data"]["result"][0]
+            metric_name = series["metric"].get("__name__", "unknown")
+            values = series["values"]
+
+            # Format the data for analysis
+            formatted_metrics = {
+                "metric_name": metric_name,
+                "values": [
+                    {
+                        "timestamp": value[0],
+                        "value": (
+                            float(value[1]) / 1024 / 1024
+                            if "bytes" in metric_name.lower()
+                            else float(value[1])
+                        ),
+                    }
+                    for value in values
+                ],
+            }
+            metrics_json = json.dumps(formatted_metrics)
+            query = f"Please analyze these monitoring metrics over time and provide insights: {metrics_json}"
+        else:
+            # Handle instant query results (current metrics)
+            metrics_json = json.dumps(metrics)
+            query = f"Please analyze these monitoring metrics and provide insights: {metrics_json}"
 
         # Prepare the request to Dify's MonitorBot API
         headers = {
@@ -228,7 +256,7 @@ def send_metrics_to_dify(metrics: dict) -> dict:
         payload = json.dumps(
             {
                 "inputs": {},
-                "query": f"Please analyze these monitoring metrics and provide insights: {metrics_json}",
+                "query": query,
                 "response_mode": "streaming",
                 "conversation_id": "",
                 "user": "chatops-user",
@@ -252,7 +280,7 @@ def send_metrics_to_dify(metrics: dict) -> dict:
             }
 
         # Process streaming response
-        analysis = ""
+        analysis = []
         for line in response.iter_lines():
             if line:
                 line_str = line.decode("utf-8").replace("data: ", "")
@@ -261,20 +289,23 @@ def send_metrics_to_dify(metrics: dict) -> dict:
                     if data.get("event") == "message":
                         current = data.get("answer", "")
                         if current:
-                            analysis = current
+                            analysis.append(current)
                     elif data.get("event") == "agent_thought":
                         thought = data.get("thought", "")
                         if thought:
-                            analysis = thought
+                            analysis.append(thought)
                     elif data.get("event") == "end":
                         final_answer = data.get("answer", "")
                         if final_answer:
-                            analysis = final_answer
+                            analysis.append(final_answer)
                 except json.JSONDecodeError:
                     continue
 
+        # Join all analysis parts with newlines
+        final_analysis = "\n".join(analysis) if analysis else "No analysis available"
+
         return {
-            "analysis": analysis if analysis else "No analysis available",
+            "analysis": final_analysis,
             "raw_metrics": metrics,
         }
 

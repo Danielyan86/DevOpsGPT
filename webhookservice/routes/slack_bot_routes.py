@@ -282,38 +282,37 @@ def handle_monitor_events():
                         "%Y-%m-%d %H:%M:%S"
                     )
                 elif result.get("query_type") == "range":
+                    logger.debug(
+                        f"Querying time series data with parameters: metric={result.get('metric')}, time_range={result.get('hours')} {result.get('unit', 'hours')}"
+                    )
+
+                    # Convert time range to hours
+                    time_value = int(result.get("hours", 1))
+                    time_unit = result.get("unit", "hours")
+                    if time_unit == "minutes":
+                        hours = time_value / 60
+                    else:
+                        hours = time_value
+
                     metrics = prometheus_service.get_metrics_range(
                         metric_name=result.get(
                             "metric", "todo_process_cpu_seconds_total"
                         ),
-                        hours=int(result.get("hours", 1)),
+                        hours=hours,
                     )
+                    logger.debug(f"Raw metrics response from Prometheus: {metrics}")
                 else:  # custom query
                     query = result.get("query", result.get("metric", ""))
                     metrics = prometheus_service.query(query)
 
                 # Send metrics to Dify's MonitorBot API
+                logger.debug("Sending metrics to Dify for analysis")
                 dify_response = send_metrics_to_dify(metrics)
+                logger.debug(f"Response from Dify: {dify_response}")
 
                 # Format metrics for Slack
                 raw_metrics = dify_response["raw_metrics"]
-
-                # Prepare metric fields based on available data
-                metric_fields = []
-                if "cpu_usage" in raw_metrics:
-                    metric_fields.append(
-                        {
-                            "type": "mrkdwn",
-                            "text": f"💻 *CPU Usage:*\n`{raw_metrics['cpu_usage']:.2f}%`",
-                        }
-                    )
-                if "memory_usage" in raw_metrics:
-                    metric_fields.append(
-                        {
-                            "type": "mrkdwn",
-                            "text": f"💾 *Memory Usage:*\n`{raw_metrics['memory_usage'] / 1024 / 1024:.2f} MB`",
-                        }
-                    )
+                logger.debug(f"Processing raw metrics for display: {raw_metrics}")
 
                 formatted_message = [
                     {
@@ -322,38 +321,165 @@ def handle_monitor_events():
                             "type": "mrkdwn",
                             "text": "🔍 *System Health Report*",
                         },
-                    },
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "*Current Metrics:*",
-                        },
-                    },
+                    }
                 ]
 
-                # Add metrics section if we have any metrics
-                if metric_fields:
-                    formatted_message.append(
-                        {
-                            "type": "section",
-                            "fields": metric_fields,
-                        }
-                    )
-
-                # Add server time if available
-                if "server_time" in raw_metrics:
-                    formatted_message.append(
-                        {
-                            "type": "context",
-                            "elements": [
+                # Handle time series data
+                if raw_metrics.get("data", {}).get("resultType") == "matrix":
+                    results = raw_metrics["data"].get("result", [])
+                    logger.debug(f"Time series results: {results}")
+                    if not results:
+                        logger.debug(
+                            "No time series results found, attempting to get current metrics"
+                        )
+                        # Try to get current metrics instead
+                        current_metrics = prometheus_service.get_process_metrics()
+                        logger.debug(f"Current metrics: {current_metrics}")
+                        if current_metrics:
+                            formatted_message.extend(
+                                [
+                                    {
+                                        "type": "section",
+                                        "text": {
+                                            "type": "mrkdwn",
+                                            "text": "ℹ️ No historical data available. Showing current metrics instead:",
+                                        },
+                                    },
+                                    {
+                                        "type": "section",
+                                        "fields": [
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": f"💾 *Current Memory Usage:*\n`{current_metrics.get('memory_usage', 0) / 1024 / 1024:.2f} MB`",
+                                            }
+                                        ],
+                                    },
+                                ]
+                            )
+                        else:
+                            formatted_message.append(
                                 {
-                                    "type": "mrkdwn",
-                                    "text": f"🕒 Server Time: `{raw_metrics['server_time']}`",
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": "ℹ️ No data available for the specified time range.",
+                                    },
                                 }
-                            ],
-                        }
-                    )
+                            )
+                    else:
+                        series = results[0]
+                        metric_name = series["metric"].get("__name__", "unknown")
+                        values = series["values"]
+
+                        # Calculate summary statistics
+                        if values:
+                            values_float = [float(v[1]) for v in values]
+                            if "bytes" in metric_name.lower():
+                                values_float = [
+                                    v / 1024 / 1024 for v in values_float
+                                ]  # Convert to MB
+                                unit = "MB"
+                            else:
+                                unit = ""
+
+                            min_value = min(values_float)
+                            max_value = max(values_float)
+                            avg_value = sum(values_float) / len(values_float)
+
+                            # Find timestamps for min and max values
+                            min_idx = values_float.index(min_value)
+                            max_idx = values_float.index(max_value)
+
+                            # Handle timestamps that might be strings or floats
+                            def format_timestamp(ts):
+                                if isinstance(ts, str):
+                                    return ts  # Already formatted
+                                return datetime.fromtimestamp(float(ts)).strftime(
+                                    "%Y-%m-%d %H:%M:%S"
+                                )
+
+                            min_time = format_timestamp(values[min_idx][0])
+                            max_time = format_timestamp(values[max_idx][0])
+                            start_time = format_timestamp(values[0][0])
+                            end_time = format_timestamp(values[-1][0])
+
+                            # Format summary text
+                            summary_text = (
+                                f"*Time Series Summary:*\n"
+                                f"• Metric: `{metric_name}`\n"
+                                f"• Time Range: `{start_time}` to `{end_time}`\n"
+                                f"• Minimum: `{min_value:.2f} {unit}` at `{min_time}`\n"
+                                f"• Maximum: `{max_value:.2f} {unit}` at `{max_time}`\n"
+                                f"• Average: `{avg_value:.2f} {unit}`"
+                            )
+
+                            formatted_message.append(
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": summary_text,
+                                    },
+                                }
+                            )
+                        else:
+                            formatted_message.append(
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": "ℹ️ No values found in the time series data.",
+                                    },
+                                }
+                            )
+                else:
+                    # Handle instant query results (current metrics)
+                    metric_fields = []
+                    if "cpu_usage" in raw_metrics:
+                        metric_fields.append(
+                            {
+                                "type": "mrkdwn",
+                                "text": f"💻 *CPU Usage:*\n`{raw_metrics['cpu_usage']:.2f}%`",
+                            }
+                        )
+                    if "memory_usage" in raw_metrics:
+                        metric_fields.append(
+                            {
+                                "type": "mrkdwn",
+                                "text": f"💾 *Memory Usage:*\n`{raw_metrics['memory_usage'] / 1024 / 1024:.2f} MB`",
+                            }
+                        )
+
+                    if metric_fields:
+                        formatted_message.extend(
+                            [
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": "*Current Metrics:*",
+                                    },
+                                },
+                                {
+                                    "type": "section",
+                                    "fields": metric_fields,
+                                },
+                            ]
+                        )
+
+                    # Add server time if available
+                    if "server_time" in raw_metrics:
+                        formatted_message.append(
+                            {
+                                "type": "context",
+                                "elements": [
+                                    {
+                                        "type": "mrkdwn",
+                                        "text": f"🕒 Server Time: `{raw_metrics['server_time']}`",
+                                    }
+                                ],
+                            }
+                        )
 
                 formatted_message.extend(
                     [
@@ -440,23 +566,6 @@ def handle_monitor_actions():
                 # Format metrics for Slack
                 raw_metrics = dify_response["raw_metrics"]
 
-                # Prepare metric fields based on available data
-                metric_fields = []
-                if "cpu_usage" in raw_metrics:
-                    metric_fields.append(
-                        {
-                            "type": "mrkdwn",
-                            "text": f"💻 *CPU Usage:*\n`{raw_metrics['cpu_usage']:.2f}%`",
-                        }
-                    )
-                if "memory_usage" in raw_metrics:
-                    metric_fields.append(
-                        {
-                            "type": "mrkdwn",
-                            "text": f"💾 *Memory Usage:*\n`{raw_metrics['memory_usage'] / 1024 / 1024:.2f} MB`",
-                        }
-                    )
-
                 formatted_message = [
                     {
                         "type": "section",
@@ -464,38 +573,160 @@ def handle_monitor_actions():
                             "type": "mrkdwn",
                             "text": "🔍 *System Health Report* (Refreshed)",
                         },
-                    },
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "*Current Metrics:*",
-                        },
-                    },
+                    }
                 ]
 
-                # Add metrics section if we have any metrics
-                if metric_fields:
-                    formatted_message.append(
-                        {
-                            "type": "section",
-                            "fields": metric_fields,
-                        }
-                    )
-
-                # Add server time if available
-                if "server_time" in raw_metrics:
-                    formatted_message.append(
-                        {
-                            "type": "context",
-                            "elements": [
+                # Handle time series data
+                if raw_metrics.get("data", {}).get("resultType") == "matrix":
+                    results = raw_metrics["data"].get("result", [])
+                    if not results:
+                        # Try to get current metrics instead
+                        current_metrics = prometheus_service.get_process_metrics()
+                        if current_metrics:
+                            formatted_message.extend(
+                                [
+                                    {
+                                        "type": "section",
+                                        "text": {
+                                            "type": "mrkdwn",
+                                            "text": "ℹ️ No historical data available. Showing current metrics instead:",
+                                        },
+                                    },
+                                    {
+                                        "type": "section",
+                                        "fields": [
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": f"💾 *Current Memory Usage:*\n`{current_metrics.get('memory_usage', 0) / 1024 / 1024:.2f} MB`",
+                                            }
+                                        ],
+                                    },
+                                ]
+                            )
+                        else:
+                            formatted_message.append(
                                 {
-                                    "type": "mrkdwn",
-                                    "text": f"🕒 Server Time: `{raw_metrics['server_time']}`",
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": "ℹ️ No data available for the specified time range.",
+                                    },
                                 }
-                            ],
-                        }
-                    )
+                            )
+                    else:
+                        series = results[0]
+                        metric_name = series["metric"].get("__name__", "unknown")
+                        values = series["values"]
+
+                        # Calculate summary statistics
+                        if values:
+                            values_float = [float(v[1]) for v in values]
+                            if "bytes" in metric_name.lower():
+                                values_float = [
+                                    v / 1024 / 1024 for v in values_float
+                                ]  # Convert to MB
+                                unit = "MB"
+                            else:
+                                unit = ""
+
+                            min_value = min(values_float)
+                            max_value = max(values_float)
+                            avg_value = sum(values_float) / len(values_float)
+
+                            # Find timestamps for min and max values
+                            min_idx = values_float.index(min_value)
+                            max_idx = values_float.index(max_value)
+
+                            # Handle timestamps that might be strings or floats
+                            def format_timestamp(ts):
+                                if isinstance(ts, str):
+                                    return ts  # Already formatted
+                                return datetime.fromtimestamp(float(ts)).strftime(
+                                    "%Y-%m-%d %H:%M:%S"
+                                )
+
+                            min_time = format_timestamp(values[min_idx][0])
+                            max_time = format_timestamp(values[max_idx][0])
+                            start_time = format_timestamp(values[0][0])
+                            end_time = format_timestamp(values[-1][0])
+
+                            # Format summary text
+                            summary_text = (
+                                f"*Time Series Summary:*\n"
+                                f"• Metric: `{metric_name}`\n"
+                                f"• Time Range: `{start_time}` to `{end_time}`\n"
+                                f"• Minimum: `{min_value:.2f} {unit}` at `{min_time}`\n"
+                                f"• Maximum: `{max_value:.2f} {unit}` at `{max_time}`\n"
+                                f"• Average: `{avg_value:.2f} {unit}`"
+                            )
+
+                            formatted_message.append(
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": summary_text,
+                                    },
+                                }
+                            )
+                        else:
+                            formatted_message.append(
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": "ℹ️ No values found in the time series data.",
+                                    },
+                                }
+                            )
+                else:
+                    # Handle instant query results (current metrics)
+                    metric_fields = []
+                    if "cpu_usage" in raw_metrics:
+                        metric_fields.append(
+                            {
+                                "type": "mrkdwn",
+                                "text": f"💻 *CPU Usage:*\n`{raw_metrics['cpu_usage']:.2f}%`",
+                            }
+                        )
+                    if "memory_usage" in raw_metrics:
+                        metric_fields.append(
+                            {
+                                "type": "mrkdwn",
+                                "text": f"💾 *Memory Usage:*\n`{raw_metrics['memory_usage'] / 1024 / 1024:.2f} MB`",
+                            }
+                        )
+
+                    if metric_fields:
+                        formatted_message.extend(
+                            [
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": "*Current Metrics:*",
+                                    },
+                                },
+                                {
+                                    "type": "section",
+                                    "fields": metric_fields,
+                                },
+                            ]
+                        )
+
+                    # Add server time if available
+                    if "server_time" in raw_metrics:
+                        formatted_message.append(
+                            {
+                                "type": "context",
+                                "elements": [
+                                    {
+                                        "type": "mrkdwn",
+                                        "text": f"🕒 Server Time: `{raw_metrics['server_time']}`",
+                                    }
+                                ],
+                            }
+                        )
 
                 formatted_message.extend(
                     [

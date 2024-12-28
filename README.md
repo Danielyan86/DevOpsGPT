@@ -36,6 +36,17 @@ The system consists of two main architectural components:
 
 > Note: Some implementation details are not shown (e.g., ngrok, Jenkins agent)
 
+### Tools Examples
+
+1. Jenkins Pipeline
+   ![Jenkins Pipeline](./docs/pictures/jenkins_pipeline.png)
+
+2. Prometheus
+   ![Prometheus Dashboard](./docs/pictures/prometheus_dashboard.png)
+
+3. Dify
+   ![Dify Interface](./docs/pictures/dify.png)
+
 ## Status
 
 - [x] ChatOps service functionality
