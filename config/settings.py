@@ -1,4 +1,11 @@
 import os
+import logging
+
+# Set logging level
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 
 # Jenkins Configuration
 JENKINS_URL = "http://127.0.0.1:8080/job/Todo_deployment_pipeline/"

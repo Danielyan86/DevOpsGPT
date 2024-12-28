@@ -44,8 +44,8 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
             logger.error(f"Error response from Dify API: {response.text}")
             return {"error": response.text}
 
-        thought_content = None
-        message_content = None
+        message_content = []
+        complete_message = None
 
         for line in response.iter_lines():
             if not line:
@@ -70,45 +70,109 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
                     if thought_content:
                         try:
                             thought_json = json.loads(thought_content)
-                            if (
-                                "branch" in thought_json
-                                or "environment" in thought_json
-                            ):
-                                parsed_params = {
-                                    "branch": thought_json.get("branch", "main"),
-                                    "environment": thought_json.get(
-                                        "environment", "staging"
-                                    ),
-                                }
-                                logger.info(f"Deployment parameters: {parsed_params}")
-                                return parsed_params
+                            if thought_json:
+                                complete_message = thought_json
                         except json.JSONDecodeError:
-                            continue
+                            pass
 
                 elif event_type == "agent_message":
                     answer = data.get("answer", "").strip()
-                    if answer and answer != "\n":
+                    if answer:
+                        message_content.append(answer)
+
+                elif event_type == "message_end":
+                    # Try to parse the complete message
+                    if message_content:
+                        complete_text = "".join(message_content)
                         try:
-                            answer_json = json.loads(answer)
-                            if "branch" in answer_json or "environment" in answer_json:
-                                parsed_params = {
-                                    "branch": answer_json.get("branch", "main"),
-                                    "environment": answer_json.get(
-                                        "environment", "staging"
-                                    ),
-                                }
-                                logger.info(f"Deployment parameters: {parsed_params}")
-                                return parsed_params
+                            complete_message = json.loads(complete_text)
                         except json.JSONDecodeError:
-                            if not message_content or message_content.isspace():
-                                message_content = answer
+                            complete_message = {"message": complete_text}
 
             except json.JSONDecodeError:
                 continue
 
-        if message_content and not message_content.isspace():
-            return {"message": message_content}
+        # Process the complete message
+        if complete_message:
+            if isinstance(complete_message, dict):
+                if "type" in complete_message and complete_message["type"] == "help":
+                    # Format help message for better readability
+                    help_data = complete_message.get("message", {})
+                    description = help_data.get("description", "")
+                    # Add spaces to description
+                    description = description.replace("Icanhelpyou", "I can help you")
+                    description = description.replace(
+                        "deployapplicationsto", "deploy applications to"
+                    )
+                    description = description.replace(
+                        "differentenvironments", "different environments"
+                    )
+                    supported_commands = help_data.get("supported_commands", {})
+                    examples = help_data.get("examples", [])
 
+                    # Format examples with proper spacing
+                    formatted_examples = []
+                    for example in examples:
+                        # Add spaces between words
+                        formatted_example = example
+                        # Handle deployment commands
+                        formatted_example = formatted_example.replace(
+                            "deploy", "deploy "
+                        )
+                        formatted_example = formatted_example.replace("test", "test ")
+                        formatted_example = formatted_example.replace(
+                            "toproduction", "to production"
+                        )
+                        # Handle update commands - do this first before other replacements
+                        formatted_example = formatted_example.replace(
+                            "updatestaging", "update staging"
+                        )
+                        formatted_example = formatted_example.replace(
+                            "environment", " environment"
+                        )
+                        formatted_examples.append(formatted_example.strip())
+
+                    formatted_message = [description, ""]
+
+                    if supported_commands:
+                        formatted_message.append("Supported commands:")
+                        for category, commands in supported_commands.items():
+                            formatted_message.append(
+                                f"• {category.title()}: {', '.join(commands)}"
+                            )
+                        formatted_message.append("")
+
+                    if formatted_examples:
+                        formatted_message.append("Examples:")
+                        for example in formatted_examples:
+                            formatted_message.append(f"• {example}")
+
+                    help_message = "\n".join(formatted_message)
+                    logger.info(f"Returning help message: {help_message}")
+                    return {"message": help_message}
+
+                elif "branch" in complete_message or "environment" in complete_message:
+                    parsed_params = {
+                        "branch": complete_message.get("branch", "main"),
+                        "environment": complete_message.get("environment", "staging"),
+                    }
+                    logger.info(f"Returning deployment parameters: {parsed_params}")
+                    return parsed_params
+                else:
+                    # Return any other structured message
+                    return {"message": str(complete_message)}
+            else:
+                # If not a dict, return as plain message
+                return {"message": str(complete_message)}
+
+        # If we get here and have message content but no complete message
+        if message_content:
+            text = "".join(message_content).strip()
+            if text:
+                logger.info(f"Returning plain text message: {text}")
+                return {"message": text}
+
+        logger.warning("No valid content found in response")
         return None
 
     except requests.Timeout:
