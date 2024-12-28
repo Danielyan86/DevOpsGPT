@@ -45,7 +45,6 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
             return {"error": response.text}
 
         message_content = []
-        complete_message = None
 
         for line in response.iter_lines():
             if not line:
@@ -84,89 +83,45 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
                                     "branch" in thought_json
                                     or "environment" in thought_json
                                 ):
+                                    # Extract only the required parameters for Jenkins build
+                                    deployment_params = {
+                                        "branch": thought_json.get("branch", "main"),
+                                        "environment": thought_json.get(
+                                            "environment", "staging"
+                                        ),
+                                        "channel": thought_json.get(
+                                            "channel", "#chatops"
+                                        ),
+                                    }
                                     logger.info(
-                                        f"Returning deployment parameters from thought: {thought_json}"
+                                        f"Returning deployment parameters from thought: {deployment_params}"
                                     )
-                                    return thought_json
-                                complete_message = thought_json
+                                    return deployment_params
                         except json.JSONDecodeError:
-                            pass
+                            # If thought_content is not JSON, append it to message_content
+                            message_content.append(thought_content)
 
                 elif event_type == "agent_message":
                     answer = data.get("answer", "").strip()
                     if answer:
                         message_content.append(answer)
 
-                elif event_type == "message_end":
-                    # Try to parse the complete message
-                    if message_content:
-                        complete_text = "".join(message_content)
-                        try:
-                            complete_message = json.loads(complete_text)
-                        except json.JSONDecodeError:
-                            complete_message = {"message": complete_text}
-
             except json.JSONDecodeError:
                 continue
 
-        # Process the complete message
-        if complete_message:
-            if isinstance(complete_message, dict):
-                if "type" in complete_message and complete_message["type"] == "help":
-                    # Get the help message
-                    help_data = complete_message.get("message", "")
-
-                    # If it's already a formatted string, use it directly
-                    if isinstance(help_data, str):
-                        logger.info(
-                            f"Returning pre-formatted help message: {help_data}"
-                        )
-                        return {"message": help_data}
-
-                    # Only format if we receive unformatted data
-                    description = help_data.get("description", "")
-                    supported_commands = help_data.get("supported_commands", {})
-                    examples = help_data.get("examples", [])
-
-                    formatted_message = [description, ""]
-
-                    if supported_commands:
-                        formatted_message.append("Supported commands:")
-                        for category, commands in supported_commands.items():
-                            formatted_message.append(
-                                f"• {category.title()}: {', '.join(commands)}"
-                            )
-                        formatted_message.append("")
-
-                    if examples:
-                        formatted_message.append("Examples:")
-                        for example in examples:
-                            formatted_message.append(f"• {example}")
-
-                    help_message = "\n".join(formatted_message)
-                    logger.info(f"Returning formatted help message: {help_message}")
-                    return {"message": help_message}
-
-                elif "branch" in complete_message or "environment" in complete_message:
-                    parsed_params = {
-                        "branch": complete_message.get("branch", "main"),
-                        "environment": complete_message.get("environment", "staging"),
-                    }
-                    logger.info(f"Returning deployment parameters: {parsed_params}")
-                    return parsed_params
-                else:
-                    # Return any other structured message
-                    return {"message": str(complete_message)}
-            else:
-                # If not a dict, return as plain message
-                return {"message": str(complete_message)}
-
-        # If we get here and have message content but no complete message
+        # If we get here and have message content
         if message_content:
             text = "".join(message_content).strip()
             if text:
-                logger.info(f"Returning plain text message: {text}")
-                return {"message": text}
+                try:
+                    # Try to parse as JSON first
+                    json_content = json.loads(text)
+                    logger.info(f"Returning JSON message: {json_content}")
+                    return json_content
+                except json.JSONDecodeError:
+                    # If not JSON, return as plain text
+                    logger.info(f"Returning plain text message: {text}")
+                    return {"message": text}
 
         logger.warning("No valid content found in response")
         return None
