@@ -71,6 +71,23 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
                         try:
                             thought_json = json.loads(thought_content)
                             if thought_json:
+                                # If this is a help message or deployment command, return it directly
+                                if (
+                                    "type" in thought_json
+                                    and thought_json["type"] == "help"
+                                ):
+                                    logger.info(
+                                        f"Returning help message from thought: {thought_json}"
+                                    )
+                                    return thought_json
+                                elif (
+                                    "branch" in thought_json
+                                    or "environment" in thought_json
+                                ):
+                                    logger.info(
+                                        f"Returning deployment parameters from thought: {thought_json}"
+                                    )
+                                    return thought_json
                                 complete_message = thought_json
                         except json.JSONDecodeError:
                             pass
@@ -96,41 +113,20 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
         if complete_message:
             if isinstance(complete_message, dict):
                 if "type" in complete_message and complete_message["type"] == "help":
-                    # Format help message for better readability
-                    help_data = complete_message.get("message", {})
+                    # Get the help message
+                    help_data = complete_message.get("message", "")
+
+                    # If it's already a formatted string, use it directly
+                    if isinstance(help_data, str):
+                        logger.info(
+                            f"Returning pre-formatted help message: {help_data}"
+                        )
+                        return {"message": help_data}
+
+                    # Only format if we receive unformatted data
                     description = help_data.get("description", "")
-                    # Add spaces to description
-                    description = description.replace("Icanhelpyou", "I can help you")
-                    description = description.replace(
-                        "deployapplicationsto", "deploy applications to"
-                    )
-                    description = description.replace(
-                        "differentenvironments", "different environments"
-                    )
                     supported_commands = help_data.get("supported_commands", {})
                     examples = help_data.get("examples", [])
-
-                    # Format examples with proper spacing
-                    formatted_examples = []
-                    for example in examples:
-                        # Add spaces between words
-                        formatted_example = example
-                        # Handle deployment commands
-                        formatted_example = formatted_example.replace(
-                            "deploy", "deploy "
-                        )
-                        formatted_example = formatted_example.replace("test", "test ")
-                        formatted_example = formatted_example.replace(
-                            "toproduction", "to production"
-                        )
-                        # Handle update commands - do this first before other replacements
-                        formatted_example = formatted_example.replace(
-                            "updatestaging", "update staging"
-                        )
-                        formatted_example = formatted_example.replace(
-                            "environment", " environment"
-                        )
-                        formatted_examples.append(formatted_example.strip())
 
                     formatted_message = [description, ""]
 
@@ -142,13 +138,13 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
                             )
                         formatted_message.append("")
 
-                    if formatted_examples:
+                    if examples:
                         formatted_message.append("Examples:")
-                        for example in formatted_examples:
+                        for example in examples:
                             formatted_message.append(f"• {example}")
 
                     help_message = "\n".join(formatted_message)
-                    logger.info(f"Returning help message: {help_message}")
+                    logger.info(f"Returning formatted help message: {help_message}")
                     return {"message": help_message}
 
                 elif "branch" in complete_message or "environment" in complete_message:
