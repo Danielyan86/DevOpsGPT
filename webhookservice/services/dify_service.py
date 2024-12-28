@@ -14,8 +14,7 @@ logger = logging.getLogger(__name__)
 def parse_deployment_intent(message: str) -> Optional[Dict]:
     """Parse deployment intent from natural language using Dify API"""
     try:
-        print(f"\n=== Processing Natural Language Request ===")
-        print(f"Input message: {message}")
+        logger.info(f"Processing deployment request: {message}")
 
         headers = {
             "Content-Type": "application/json",
@@ -33,54 +32,90 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
             }
         )
 
-        print(f"Sending request to Dify with payload: {payload}")
-
         response = requests.post(
             DIFY_API_ENDPOINT,
             headers=headers,
             data=payload,
             stream=True,
+            timeout=30,
         )
 
-        print(f"Dify API Response Status: {response.status_code}")
-
         if response.status_code != 200:
-            print(f"Error from Dify API: {response.text}")
+            logger.error(f"Error response from Dify API: {response.text}")
             return {"error": response.text}
 
         thought_content = None
+        message_content = None
 
         for line in response.iter_lines():
-            if line:
-                line = line.decode("utf-8").replace("data: ", "")
-                try:
-                    data = json.loads(line)
-                    if data.get("event") == "agent_thought":
-                        thought_content = data.get("thought", "")
-                        if thought_content:
-                            try:
-                                thought_json = json.loads(thought_content)
+            if not line:
+                continue
+
+            line = line.decode("utf-8")
+
+            # Handle ping events
+            if line.startswith("event: ping"):
+                continue
+
+            # Remove "data: " prefix if present
+            if line.startswith("data: "):
+                line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                event_type = data.get("event")
+
+                if event_type == "agent_thought":
+                    thought_content = data.get("thought", "")
+                    if thought_content:
+                        try:
+                            thought_json = json.loads(thought_content)
+                            if (
+                                "branch" in thought_json
+                                or "environment" in thought_json
+                            ):
                                 parsed_params = {
                                     "branch": thought_json.get("branch", "main"),
                                     "environment": thought_json.get(
                                         "environment", "staging"
                                     ),
                                 }
-                                print(f"Parsed parameters: {parsed_params}")
+                                logger.info(f"Deployment parameters: {parsed_params}")
                                 return parsed_params
-                            except json.JSONDecodeError as e:
-                                print(f"Non-JSON thought content: {thought_content}")
-                                # Return the raw thought content for non-JSON responses
-                                return {"message": thought_content}
-                except json.JSONDecodeError:
-                    continue
+                        except json.JSONDecodeError:
+                            continue
 
-        print("No valid parameters found in response")
+                elif event_type == "agent_message":
+                    answer = data.get("answer", "").strip()
+                    if answer and answer != "\n":
+                        try:
+                            answer_json = json.loads(answer)
+                            if "branch" in answer_json or "environment" in answer_json:
+                                parsed_params = {
+                                    "branch": answer_json.get("branch", "main"),
+                                    "environment": answer_json.get(
+                                        "environment", "staging"
+                                    ),
+                                }
+                                logger.info(f"Deployment parameters: {parsed_params}")
+                                return parsed_params
+                        except json.JSONDecodeError:
+                            if not message_content or message_content.isspace():
+                                message_content = answer
+
+            except json.JSONDecodeError:
+                continue
+
+        if message_content and not message_content.isspace():
+            return {"message": message_content}
+
         return None
 
+    except requests.Timeout:
+        logger.error("Request to Dify API timed out after 30 seconds")
+        return {"error": "Request timed out"}
     except Exception as e:
-        print(f"Error in parse_deployment_intent: {str(e)}")
-        print(f"Exception type: {type(e)}")
+        logger.error(f"Error in parse_deployment_intent: {str(e)}", exc_info=True)
         return None
 
 

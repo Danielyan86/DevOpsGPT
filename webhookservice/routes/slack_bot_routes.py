@@ -34,6 +34,17 @@ def handle_deploy_events():
         if data.get("type") == "url_verification":
             return jsonify({"challenge": data.get("challenge")}), 200
 
+        # Check for duplicate events
+        event_id = data.get("event_id")
+        if event_id:
+            if event_id in processed_events:
+                logger.info(f"Skipping duplicate deployment event: {event_id}")
+                return jsonify({"ok": True}), 200
+            processed_events.add(event_id)
+            # Keep the set size manageable
+            if len(processed_events) > 1000:
+                processed_events.clear()
+
         # Process app_mention events
         if data.get("event", {}).get("type") == "app_mention":
             event = data["event"]
