@@ -24,28 +24,66 @@ The demo project is available in this repository: [ChatOps-Solution](https://git
 
 ## Architecture
 
-### High-Level Design
+### Agent Architecture
 
-The system consists of two main architectural components:
+![Agent Architecture](./docs/pictures/Agent_Architecture.png)
 
-1. AI Agent and Monitoring Integration
-   ![Monitor Architecture](./docs/pictures/monitor_architecture.png)
+The system implements a flexible and extensible AI agent architecture that can be customized for enterprise needs. Key components include:
 
-2. AI Agent and Deployment Integration
-   ![Deploy Architecture](./docs/pictures/deploy_architecture.png)
+- **Channels**: Support multiple communication channels (WeCom, Teams, Slack, Discord) for user interaction
+- **API Gateway**: Unified interface for all service communications
+- **Orchestration Service**: Coordinates between different services and tools
+- **Agent Service**: Core AI processing with extensible modules
+- **External Tools**: Integration with enterprise tools (Prometheus, Jira, Jenkins, Docker)
+- **LLM Support**: Flexible LLM backend support (GPT, Ollama, HuggingFace Models)
+- **Local Data**: Structured storage for logs, knowledge base, and additional data sources
 
-> Note: Some implementation details are not shown (e.g., ngrok, Jenkins agent)
+This architecture enables enterprises to:
 
-### Tools Examples
+- Build customized AI agent ecosystems
+- Integrate with existing enterprise tools
+- Scale and extend functionality through modular design
+- Maintain data security with local storage options
+- Support multiple LLM backends based on requirements
 
-1. Jenkins Pipeline
-   ![Jenkins Pipeline](./docs/pictures/jenkins_pipeline.png)
+### Implementation Examples
 
-2. Prometheus
-   ![Prometheus Dashboard](./docs/pictures/prometheus_dashboard.png)
+The following examples demonstrate how this architecture is implemented in practice:
 
-3. Dify
-   ![Dify Interface](./docs/pictures/dify.png)
+#### 1. AI Agent Integration
+
+We've implemented two main integration patterns:
+
+a. Monitoring Integration
+![Monitor Architecture](./docs/pictures/monitor_architecture.png)
+
+> Shows how the AI agent integrates with monitoring systems for automated alerting and response
+
+b. Deployment Integration
+![Deploy Architecture](./docs/pictures/deploy_architecture.png)
+
+> Demonstrates the integration with CI/CD systems for automated deployments
+
+#### 2. Tool Integration Examples
+
+The system successfully integrates with various enterprise tools:
+
+a. Jenkins CI/CD Pipeline
+![Jenkins Pipeline](./docs/pictures/jenkins_pipeline.png)
+
+> Automated deployment pipeline triggered by natural language commands
+
+b. Prometheus Monitoring
+![Prometheus Dashboard](./docs/pictures/prometheus_dashboard.png)
+
+> Real-time system metrics and monitoring integration
+
+c. Dify Agent Service
+![Dify Interface](./docs/pictures/dify.png)
+
+> AI agent management and prompt engineering interface
+
+> Note: These examples showcase specific implementations, but the architecture supports integration with alternative tools based on enterprise requirements.
 
 ## Status
 
