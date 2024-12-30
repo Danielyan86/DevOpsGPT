@@ -24,11 +24,11 @@ The demo project is available in this repository: [ChatOps-Solution](https://git
 
 ## Architecture
 
-### Agent Architecture
+### AI-Driven DevOps Architecture
 
-![Agent Architecture](./docs/pictures/Agent_Architecture.png)
+![AI-Driven DevOps Architecture](./docs/pictures/Agent_Architecture.png)
 
-The system implements a flexible and extensible AI agent architecture that can be customized for enterprise needs. Key components include:
+The system implements a flexible and extensible AI-driven architecture that can be customized for enterprise needs. Key components include:
 
 - **Channels**: Support multiple communication channels (WeCom, Teams, Slack, Discord) for user interaction
 - **API Gateway**: Unified interface for all service communications
