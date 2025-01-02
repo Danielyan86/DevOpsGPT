@@ -149,6 +149,48 @@ Before starting, ensure you have:
 4. Set up the Jenkins agent
 5. Configured Prometheus monitoring
 
+### Setup Dify
+
+1. Clone the Dify repository:
+
+```bash
+git clone https://github.com/langgenius/dify.git
+cd dify
+```
+
+2. Start Dify using Docker Compose:
+
+```bash
+docker compose up -d
+```
+
+3. Access the Dify web interface:
+
+   - Open your browser and navigate to `http://localhost`
+   - Create a new account or login
+   - Go to "Applications" and click "Create New"
+   - Create a new bot application
+
+4. Configure the bot:
+
+   - In your bot settings, navigate to the Prompt Engineering section
+   - Import and configure the prompts from the `prompts` directory in this repository
+   - Save your changes
+
+5. Get the API credentials:
+
+   - Go to API Access section in your bot settings
+   - Copy the API Key (this will be your bot token)
+
+6. Set up environment variables:
+
+```bash
+# Add this to your .env file or export in your shell
+export DIFY_BOT_TOKEN=your_bot_token_here
+```
+
+> Note: Make sure Docker and Docker Compose are installed on your system before starting the setup process.
+
 ### Jenkins Configuration
 
 1. Start Jenkins server:
@@ -202,20 +244,41 @@ docker run -d --name prometheus \
    - Metrics: http://localhost:9090/metrics
    - Targets: http://localhost:9090/targets
 
+### Setup ngrok
+
+> Note: ngrok is required for external access as Slack API needs a public URL to send messages to your bot.
+
+1. Download and install ngrok:
+
+2. Authenticate ngrok (first time only):
+
+```bash
+ngrok config add-authtoken your_auth_token
+```
+
+3. Start ngrok tunnel:
+
+```bash
+ngrok http 5001
+```
+
+4. Configure webhook URL:
+   - Copy the generated ngrok URL (e.g., `https://xxxx.ngrok.io`)
+   - Use this URL in your Slack app configuration
+   - Keep ngrok running while using the Slack integration
+
 ### Slack Configuration
 
 1. Create and Install Slack App:
 
    - Create a new Slack app
+   - Configure subscription with ngrok URL
    - Get the app token
    - Install app to workspace and channel
-   - Configure webhook URLs
 
 2. Configure App Settings:
-
    - Set up Interactivity & Shortcuts
      ![Slack Interactivity Settings](./docs/pictures/slack_interactivies_shortcuts.png)
-
    - Configure Event Subscriptions
      ![Slack Event Subscriptions](./docs/pictures/slack_event_subscriptions.png)
 
