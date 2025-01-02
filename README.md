@@ -4,9 +4,13 @@
 
 A ChatOps solution that enables natural language-driven DevOps operations through integration of various tools and LLMs.
 
-![Deploy Bot Demo](./docs/pictures/DeployBotDemo.gif)
+![Deploy Bot Demo](./docs/GIF/DeployBotDemo.gif)
 
 > The demo shows how to use natural language to trigger deployments and interact with the system through Slack.
+
+![Monitor Bot Demo](./docs/GIF/MonitorBotDemo.gif)
+
+> The demo shows how to use natural language to monitor the system and interact with the system through Slack.
 
 ## Overview
 
