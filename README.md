@@ -146,8 +146,8 @@ Before starting, ensure you have:
 1. Started the Dify server in Docker
 2. Configured the Dify bot
 3. Started and configured the Jenkins server
-4. Set up the Jenkins agent
-5. Configured Prometheus monitoring
+4. Set up the Jenkins server and agent
+5. Set up and configured Prometheus monitoring
 
 ### Setup Dify
 
@@ -259,7 +259,7 @@ ngrok config add-authtoken your_auth_token
 3. Start ngrok tunnel:
 
 ```bash
-ngrok http 5001
+ngrok http 4040
 ```
 
 4. Configure webhook URL:
