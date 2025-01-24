@@ -14,7 +14,13 @@ A ChatOps solution that enables natural language-driven DevOps operations throug
 
 ## Overview
 
-This project implements ChatOps/AIOps concepts by creating a system that enables developers to trigger deployments using natural language commands. The system integrates various tools and services to provide a seamless ChatOps experience.
+This project implements the core ChatOps service with webhook handling capabilities. For a complete demonstration of deployment capabilities, you can refer to our demo project: [ChatOps Demo Project](https://github.com/Danielyan86/DevOpsGPT_Demo)
+
+The main project consists of:
+
+- A webhook service (`webhookservice`) that handles incoming requests
+- Integration endpoints for various services (Slack, Jenkins, etc.)
+- Core ChatOps functionality
 
 **Key Principle**: All services and modules are decoupled and can be replaced with alternatives. For example:
 
@@ -23,8 +29,6 @@ This project implements ChatOps/AIOps concepts by creating a system that enables
 - Monitoring and CI/CD tools can be replaced with alternative solutions
 
 > While the demo runs locally, the system is designed for and supports cloud deployment.
-
-The demo project is available in this repository: [ChatOps-Solution](https://github.com/Danielyan86/DevOpsGPT_Demo)
 
 ## Architecture
 
@@ -282,7 +286,7 @@ pip install -r requirements.txt
 2. Configure environment variables:
 
 ```bash
-# Add these to your .env file or export in your environment
+# Add these to your .env file or export in your shell
 export SLACK_BOT_TOKEN=your_slack_bot_token
 export SLACK_SIGNING_SECRET=your_slack_signing_secret
 export JENKINS_URL=http://localhost:8080
@@ -295,10 +299,7 @@ export DIFY_BOT_TOKEN=your_dify_bot_token
 
 ```bash
 # Development mode
-python app.py
-
-# Or production mode with gunicorn
-gunicorn -w 4 -b 0.0.0.0:5001 app:app
+python run.py
 ```
 
 The Flask server will start on port 5001 by default. Make sure all other services (Jenkins, Dify, Prometheus) are running before starting the Flask server.
