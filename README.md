@@ -271,6 +271,38 @@ ngrok http 4040
    - Use this URL in your Slack app configuration
    - Keep ngrok running while using the Slack integration
 
+### Flask Server Setup
+
+1. Install Python dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+2. Configure environment variables:
+
+```bash
+# Add these to your .env file or export in your environment
+export SLACK_BOT_TOKEN=your_slack_bot_token
+export SLACK_SIGNING_SECRET=your_slack_signing_secret
+export JENKINS_URL=http://localhost:8080
+export JENKINS_USER=your_jenkins_user
+export JENKINS_TOKEN=your_jenkins_api_token
+export DIFY_BOT_TOKEN=your_dify_bot_token
+```
+
+3. Start the Flask server:
+
+```bash
+# Development mode
+python app.py
+
+# Or production mode with gunicorn
+gunicorn -w 4 -b 0.0.0.0:5001 app:app
+```
+
+The Flask server will start on port 5001 by default. Make sure all other services (Jenkins, Dify, Prometheus) are running before starting the Flask server.
+
 ### Slack Configuration
 
 1. Create and Install Slack App:

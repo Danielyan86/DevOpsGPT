@@ -1,0 +1,91 @@
+<mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- Local Documents -->
+    <mxCell id="localDocuments" value="Local Documents" style="rounded=1;strokeColor=#000000;fillColor=#FFD966;gradientColor=none;sketch=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="40" width="140" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Unstructured Loader -->
+    <mxCell id="unstructuredLoader" value="Unstructured Loader" style="rounded=1;strokeColor=#000000;fillColor=#A9D08E;gradientColor=none;sketch=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="40" width="140" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Text Splitter -->
+    <mxCell id="textSplitter" value="Text Splitter" style="rounded=1;strokeColor=#000000;fillColor=#A9D08E;gradientColor=none;sketch=1;" vertex="1" parent="1">
+      <mxGeometry x="360" y="40" width="140" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Text Chunks -->
+    <mxCell id="textChunks" value="Text Chunks" style="rounded=1;strokeColor=#000000;fillColor=#F4B183;gradientColor=none;sketch=1;" vertex="1" parent="1">
+      <mxGeometry x="520" y="40" width="140" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Embedding -->
+    <mxCell id="embedding" value="Embedding" style="rounded=1;strokeColor=#000000;fillColor=#9DC3E6;gradientColor=none;sketch=1;" vertex="1" parent="1">
+      <mxGeometry x="680" y="40" width="140" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Vector Store -->
+    <mxCell id="vectorStore" value="Vector Store" style="rounded=1;strokeColor=#000000;fillColor=#F4B183;gradientColor=none;sketch=1;" vertex="1" parent="1">
+      <mxGeometry x="840" y="40" width="140" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Query -->
+    <mxCell id="query" value="Query" style="rounded=1;strokeColor=#000000;fillColor=#C9C9C9;gradientColor=none;sketch=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="200" width="140" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Query Embedding -->
+    <mxCell id="queryEmbedding" value="Embedding" style="rounded=1;strokeColor=#000000;fillColor=#9DC3E6;gradientColor=none;sketch=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="200" width="140" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Query Vector -->
+    <mxCell id="queryVector" value="Query Vector" style="rounded=1;strokeColor=#000000;fillColor=#9DC3E6;gradientColor=none;sketch=1;" vertex="1" parent="1">
+      <mxGeometry x="360" y="200" width="140" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Vector Similarity -->
+    <mxCell id="vectorSimilarity" value="Vector Similarity" style="rounded=1;strokeColor=#000000;fillColor=#9DC3E6;gradientColor=none;sketch=1;" vertex="1" parent="1">
+      <mxGeometry x="520" y="200" width="140" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Related Text Chunks -->
+    <mxCell id="relatedTextChunks" value="Related Text Chunks" style="rounded=1;strokeColor=#000000;fillColor=#F4B183;gradientColor=none;sketch=1;" vertex="1" parent="1">
+      <mxGeometry x="680" y="200" width="140" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Prompt -->
+    <mxCell id="prompt" value="Prompt" style="rounded=1;strokeColor=#000000;fillColor=#F4B183;gradientColor=none;sketch=1;" vertex="1" parent="1">
+      <mxGeometry x="840" y="200" width="140" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- LLM -->
+    <mxCell id="llm" value="LLM" style="rounded=1;strokeColor=#000000;fillColor=#C9C9C9;gradientColor=none;sketch=1;" vertex="1" parent="1">
+      <mxGeometry x="1000" y="200" width="140" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Answer -->
+    <mxCell id="answer" value="Answer" style="rounded=1;strokeColor=#000000;fillColor=#F4B183;gradientColor=none;sketch=1;" vertex="1" parent="1">
+      <mxGeometry x="1160" y="200" width="140" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Connections with Arrows -->
+    <mxCell edge="1" parent="1" source="localDocuments" target="unstructuredLoader" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;"/>
+    <mxCell edge="1" parent="1" source="unstructuredLoader" target="textSplitter" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;"/>
+    <mxCell edge="1" parent="1" source="textSplitter" target="textChunks" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;"/>
+    <mxCell edge="1" parent="1" source="textChunks" target="embedding" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;"/>
+    <mxCell edge="1" parent="1" source="embedding" target="vectorStore" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;"/>
+    <mxCell edge="1" parent="1" source="query" target="queryEmbedding" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;"/>
+    <mxCell edge="1" parent="1" source="queryEmbedding" target="queryVector" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;"/>
+    <mxCell edge="1" parent="1" source="queryVector" target="vectorSimilarity" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;"/>
+    <mxCell edge="1" parent="1" source="vectorSimilarity" target="relatedTextChunks" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;"/>
+    <mxCell edge="1" parent="1" source="relatedTextChunks" target="prompt" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;"/>
+    <mxCell edge="1" parent="1" source="prompt" target="llm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;"/>
+    <mxCell edge="1" parent="1" source="llm" target="answer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;"/>
+
+  </root>
+</mxGraphModel>
