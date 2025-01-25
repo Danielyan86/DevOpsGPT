@@ -324,3 +324,76 @@ The Flask server will start on port 5001 by default. Make sure all other service
 ### Natural Language Deployment
 
 The system supports deploying applications to different branches with multiple languages. See the demo at the top of this document.
+
+# ChatOps Bot
+
+A Slack bot that helps with deployment and monitoring tasks through natural language interactions.
+
+## Features
+
+### Deployment Assistant
+- Natural language deployment requests
+- Support for multiple environments (staging, production)
+- Branch-based deployments
+- Interactive confirmation flow
+- Jenkins integration for build execution
+
+### Monitoring Assistant
+- Real-time system metrics monitoring
+- Support for various metrics (CPU, Memory, etc.)
+- Time-series data analysis
+- Prometheus integration
+- Interactive metric refresh
+
+## Project Structure
+
+## Implementation
+
+### WebhookService Structure
+
+The `webhookservice` package handles all ChatOps functionality through three main modules:
+
+#### Routes
+- `slack_bot_routes.py`: Handles Slack events and interactions
+  - `/deploy/events`: For deployment requests
+  - `/monitor/events`: For monitoring requests
+
+#### Services
+- `dify_service.py`: Natural language processing and intent parsing
+- `jenkins_service.py`: Deployment job execution
+- `prometheus_service.py`: System metrics collection
+- `slack_service.py`: Message handling and formatting
+
+#### Schemas
+- `slack_schemas.py`: Data models and validation
+
+### Data Flow
+```
+Deployment: Slack → Routes → Dify (NLP) → Jenkins → Slack
+Monitoring: Slack → Routes → Dify (NLP) → Prometheus → Slack
+```
+
+### Key Features
+- Event deduplication
+- Interactive confirmations
+- Streaming responses
+- Error recovery
+- Flexible command routing
+
+### Configuration
+
+The service uses environment-based configuration for flexibility:
+```python
+# config/settings.py
+DIFY_DEPLOY_BOT_API_KEY = os.getenv("DIFY_DEPLOY_BOT_API_KEY")
+DIFY_MONITOR_BOT_API_KEY = os.getenv("DIFY_MONITOR_BOT_API_KEY")
+JENKINS_URL = os.getenv("JENKINS_URL")
+```
+
+### Extension Points
+
+The modular design allows for easy extensions:
+
+1. **New Commands**: Add new route handlers in `routes/`
+2. **New Services**: Implement new service integrations in `services/`
+3. **New Schemas**: Define new data models in `schemas/`
