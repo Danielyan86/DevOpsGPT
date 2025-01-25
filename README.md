@@ -14,7 +14,7 @@ A ChatOps solution that enables natural language-driven DevOps operations throug
 
 ## Overview
 
-This project implements the core ChatOps service with webhook handling capabilities. For a complete demonstration of deployment capabilities, you can refer to our demo project: [ChatOps Demo Project](https://github.com/Danielyan86/DevOpsGPT_Demo)
+This project implements the core ChatOps service with webhook handling capabilities. For a complete demonstration of deployment capabilities, you can refer to our demo project: [Web Demo Project](https://github.com/Danielyan86/DevOpsGPT_Demo)
 
 The main project consists of:
 
