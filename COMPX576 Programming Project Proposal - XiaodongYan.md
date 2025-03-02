@@ -12,39 +12,40 @@ DevOps operations often require specialized knowledge and complex command syntax
 2. Reduce the learning curve for new team members
 3. Accelerate common deployment and monitoring tasks
 4. Create a centralized interface for disparate DevOps tools
-5. Demonstrate practical application of LLMs in enterprise DevOps environments
 
 # Architecture
 
 The system implements a flexible and extensible AI-driven architecture with these key components:
 
-- **Channels**: Use slack as example channel
-- **API Gateway**: Unified interface for all service communications
+- **Channels**: Uses Slack as the channel tool
+- **API Gateway**: A unified interface for all service communications
 - **Orchestration Service**: Coordinates between different services and tools
 - **Agent Service**: Core AI processing with extensible modules
 - **External Tools**: Integration with enterprise tools (Jenkins, Prometheus, Docker)
-- **LLM Support**: Flexible LLM backend support (CHat GPT API)
+- **LLM Support**: Flexible LLM backend support (GPT, Ollama, DeepSeek)
 - **Local Data**: Structured storage for logs and knowledge base
 
 ## System Diagram
 
-[Include a system architecture diagram here]
+Two user case integration examples:
 
-## Data Flow
+### a. Monitoring Integration
 
-1. User inputs natural language request in Slack
-2. Request is processed by the API Gateway
-3. Orchestration Service routes the request to the Agent Service
-4. Agent Service uses LLM to interpret the request and determine required actions
-5. Appropriate external tools are invoked via their APIs
-6. Results are collected, formatted, and returned to the user via Slack
+![Monitor Architecture](./docs/pictures/monitor_architecture.png)
+
+> Shows how the AI agent integrates with monitoring systems for automated alerting and response
+
+### b. Deployment Integration
+
+![Deploy Architecture](./docs/pictures/deploy_architecture.png)
+
+> Demonstrates the integration with CI/CD systems for automated deployments
 
 # Key Features
 
 - Natural language-driven deployments
 - Multi-language branch deployment support
 - Automatic parameter parsing from natural language
-- Integrated monitoring and observability
 - ChatOps interface through Slack
 - Real-time metrics monitoring with Prometheus
 - Jenkins CI/CD integration
@@ -52,10 +53,10 @@ The system implements a flexible and extensible AI-driven architecture with thes
 
 ## Example Use Cases
 
+Users can input these natural language commands in Slack:
+
 1. **Deployment**: "Deploy the latest version of the payment service to staging"
 2. **Monitoring**: "Show me CPU usage for the authentication service over the last 24 hours"
-3. **Troubleshooting**: "List all failed deployments from yesterday"
-4. **System Management**: "Scale the order processing service to 5 instances"
 
 # Technology Stack
 
@@ -70,8 +71,6 @@ The system implements a flexible and extensible AI-driven architecture with thes
 
 - Dify for agent service and prompt management
 - OpenAI API for LLM capabilities
-- RAG (Retrieval Augmented Generation)
-- Vector database for knowledge storage
 
 ## Communication & Workflow
 
@@ -85,13 +84,6 @@ The system implements a flexible and extensible AI-driven architecture with thes
 ## Development Methodology
 
 This project will follow an agile development approach with weekly sprints. Each sprint will focus on delivering specific functional components that can be demonstrated and tested.
-
-## Testing Strategy
-
-- Unit testing for individual components
-- Integration testing for service interactions
-- End-to-end testing for complete workflows
-- User acceptance testing with sample DevOps scenarios
 
 # Project Timeline
 
