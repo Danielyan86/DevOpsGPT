@@ -46,9 +46,8 @@ The system implements a flexible and extensible AI-driven architecture with thes
 - **API Gateway**: A unified interface for all service communications
 - **Orchestration Service**: Coordinates between different services and tools
 - **Agent Service**: Core AI processing with extensible modules
-- **External Tools**: Integration with enterprise tools (Jenkins, Prometheus, Docker)
+- **External Tools**: Integration with devops tools (Jenkins, Prometheus, Docker)
 - **LLM Support**: Flexible LLM backend support (GPT, Ollama, DeepSeek)
-- **Local Data**: Structured storage for logs and knowledge base
 
 ## System Diagram
 
@@ -70,11 +69,9 @@ Two user case integration examples:
 
 - Natural language-driven deployments
 - Multi-language branch deployment support
-- Automatic parameter parsing from natural language
 - ChatOps interface through Slack
 - Real-time metrics monitoring with Prometheus
 - Jenkins CI/CD integration
-- Modular and extensible architecture
 
 ## Example Use Cases
 
@@ -101,8 +98,6 @@ Users can input these natural language commands in Slack:
 
 - Slack for ChatOps interface
 - Flask for API service
-- Redis for message queuing
-- PostgreSQL for structured data storage
 
 # Project Timeline
 
