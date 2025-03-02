@@ -1,3 +1,7 @@
+![first page](fisrt_page.png)
+
+<div style="page-break-after: always"></div>
+
 - [Introduction](#introduction)
   - [Requirements](#requirements)
   - [Project Objectives](#project-objectives)
@@ -154,4 +158,4 @@ this is a general plan for project planning, the details might be adjusted based
 
 # Conclusion
 
-This ChatOps solution represents a significant advancement in DevOps tooling by leveraging natural language processing to simplify complex operations. The project delivers immediate value through streamlined workflows while establishing a foundation for future AI-driven operational enhancements.
+This ChatOps solution represents a significant advancement in DevOps tooling by leveraging natural language processing to simplify complex operations. This project demonstrates how leveraging AI agents can enhance traditional IT operations.
