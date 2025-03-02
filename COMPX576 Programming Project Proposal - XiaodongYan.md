@@ -1,5 +1,5 @@
 - [Introduction](#introduction)
-  - [Problem Statement](#problem-statement)
+  - [Requirements](#requirements)
   - [Project Objectives](#project-objectives)
 - [Architecture](#architecture)
   - [System Diagram](#system-diagram)
@@ -27,7 +27,7 @@
 
 This project aims to develop a ChatOps solution that enables natural language-driven DevOps operations through integration of various tools and Large Language Models (LLMs). The system will solve the problem of complex DevOps operations by providing an intuitive, natural language interface for deployment, monitoring, and system management tasks.
 
-## Problem Statement
+## Requirements
 
 DevOps operations often require specialized knowledge and complex command syntax across multiple tools. This creates a high barrier to entry for team members without extensive DevOps experience and slows down operational workflows.
 
