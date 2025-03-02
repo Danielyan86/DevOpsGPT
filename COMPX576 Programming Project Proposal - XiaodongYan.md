@@ -1,3 +1,28 @@
+- [Introduction](#introduction)
+  - [Problem Statement](#problem-statement)
+  - [Project Objectives](#project-objectives)
+- [Architecture](#architecture)
+  - [System Diagram](#system-diagram)
+    - [a. Monitoring Integration](#a-monitoring-integration)
+    - [b. Deployment Integration](#b-deployment-integration)
+- [Key Features](#key-features)
+  - [Example Use Cases](#example-use-cases)
+- [Technology Stack](#technology-stack)
+  - [Infrastructure \& Monitoring](#infrastructure--monitoring)
+  - [AI \& Automation](#ai--automation)
+  - [Communication \& Workflow](#communication--workflow)
+- [Project Timeline](#project-timeline)
+  - [Week 2-3: Research and Planning](#week-2-3-research-and-planning)
+  - [Week 4: Infrastructure Setup](#week-4-infrastructure-setup)
+  - [Week 5: Core Service Development](#week-5-core-service-development)
+  - [Week 6: Communication Integration](#week-6-communication-integration)
+  - [Week 7: AI Integration](#week-7-ai-integration)
+  - [Week 8: Deployment Integration](#week-8-deployment-integration)
+  - [Week 9: Monitoring Tool Integration](#week-9-monitoring-tool-integration)
+  - [Week 10-11: Testing and Refinement](#week-10-11-testing-and-refinement)
+  - [Week 12: Presentation and Delivery](#week-12-presentation-and-delivery)
+- [Conclusion](#conclusion)
+
 # Introduction
 
 This project aims to develop a ChatOps solution that enables natural language-driven DevOps operations through integration of various tools and Large Language Models (LLMs). The system will solve the problem of complex DevOps operations by providing an intuitive, natural language interface for deployment, monitoring, and system management tasks.
