@@ -25,6 +25,11 @@
   - [Week 9: Monitoring Tool Integration](#week-9-monitoring-tool-integration)
   - [Week 10-11: Testing and Refinement](#week-10-11-testing-and-refinement)
   - [Week 12: Presentation and Delivery](#week-12-presentation-and-delivery)
+- [Weekly Reports](#weekly-reports)
+  - [Week 2 Report](#week-2-report)
+    - [Achievements](#achievements)
+    - [Challenges](#challenges)
+    - [Next Week Plans](#next-week-plans)
 - [Conclusion](#conclusion)
 
 # Introduction
@@ -155,6 +160,26 @@ this is a general plan for project planning, the details might be adjusted based
 ## Week 12: Presentation and Delivery
 
 - Final presentation preparation
+
+# Weekly Reports
+
+## Week 2 Report
+
+### Achievements
+
+- Completed initial technology stack research
+- Completed the project proposal
+- Designed project repository with basic structure
+
+### Challenges
+
+1. **Core Orchestration System Design**
+   - Challenge: Designing architecture for service coordination
+   - Mitigation: Will research more architectural patterns
+
+### Next Week Plans
+
+- Complete system architecture design
 
 # Conclusion
 
