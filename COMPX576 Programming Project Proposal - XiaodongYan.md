@@ -30,6 +30,10 @@
     - [Achievements](#achievements)
     - [Challenges](#challenges)
     - [Next Week Plans](#next-week-plans)
+  - [Week 3 Report](#week-3-report)
+    - [Achievements](#achievements-1)
+    - [Challenges](#challenges-1)
+    - [Next Week Plans](#next-week-plans-1)
 - [Conclusion](#conclusion)
 
 # Introduction
@@ -180,6 +184,29 @@ this is a general plan for project planning, the details might be adjusted based
 ### Next Week Plans
 
 - Complete system architecture design
+
+## Week 3 Report
+
+### Achievements
+
+- Completed development environment setup:
+  - Jenkins CI/CD server installation
+  - Docker containerization platform
+  - Dify AI platform configuration
+- Configured basic integration between components
+
+### Challenges
+
+1. **Core Orchestration System Design**
+   - Challenge: Designing scalable architecture for service coordination
+   - Mitigation: Researching microservices patterns and event-driven approaches
+
+### Next Week Plans
+
+- Begin orchestration service development:
+  - Set up basic service structure
+  - Implement core communication flows
+  - Create initial API endpoints
 
 # Conclusion
 
