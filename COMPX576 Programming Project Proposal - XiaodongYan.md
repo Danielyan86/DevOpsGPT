@@ -34,6 +34,10 @@
     - [Achievements](#achievements-1)
     - [Challenges](#challenges-1)
     - [Next Week Plans](#next-week-plans-1)
+  - [Week 4 Report](#week-4-report)
+    - [Achievements](#achievements-2)
+    - [Challenges](#challenges-2)
+    - [Next Week Plans](#next-week-plans-2)
 - [Conclusion](#conclusion)
 
 # Introduction
@@ -207,6 +211,27 @@ this is a general plan for project planning, the details might be adjusted based
   - Set up basic service structure
   - Implement core communication flows
   - Create initial API endpoints
+
+## Week 4 Report
+
+### Achievements
+
+- Implemented functional monitoring bot:
+  - Natural language processing for system metrics queries
+  - Integration with Slack for command input
+  - Successfully retrieving CPU and memory metrics
+  - Basic response formatting in Slack
+
+### Challenges
+
+- Response refresh mechanism needs implementation
+- Real-time data updates require additional design consideration
+
+### Next Week Plans
+
+- Enhance monitoring bot functionality:
+  - Implement refresh button in Slack interface
+  - Add real-time metric updates
 
 # Conclusion
 
