@@ -38,6 +38,9 @@
     - [Achievements](#achievements-2)
     - [Challenges](#challenges-2)
     - [Next Week Plans](#next-week-plans-2)
+  - [Week 5 Report](#week-5-report)
+    - [Achievements](#achievements-3)
+    - [Next Week Plans](#next-week-plans-3)
 - [Conclusion](#conclusion)
 
 # Introduction
@@ -232,6 +235,22 @@ this is a general plan for project planning, the details might be adjusted based
 - Enhance monitoring bot functionality:
   - Implement refresh button in Slack interface
   - Add real-time metric updates
+
+## Week 5 Report
+
+### Achievements
+
+- Enhanced monitoring bot functionality:
+  - Implemented interactive refresh button in Slack interface
+  - Added real-time metric updates through button clicks
+  - Fix the response issues
+
+### Next Week Plans
+
+- Begin deployment function implementation:
+  - Design deployment command structure
+  - Create basic deployment pipeline
+  - Integrate with Jenkins CI/CD
 
 # Conclusion
 
