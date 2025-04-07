@@ -41,6 +41,9 @@
   - [Week 5 Report](#week-5-report)
     - [Achievements](#achievements-3)
     - [Next Week Plans](#next-week-plans-3)
+  - [Week 6 Report](#week-6-report)
+    - [Achievements](#achievements-4)
+    - [Next Week Plans](#next-week-plans-4)
 - [Conclusion](#conclusion)
 
 # Introduction
@@ -251,6 +254,20 @@ this is a general plan for project planning, the details might be adjusted based
   - Design deployment command structure
   - Create basic deployment pipeline
   - Integrate with Jenkins CI/CD
+
+## Week 6 Report
+
+### Achievements
+
+- Prepared deployment environment:
+  - Set up Jenkins pipeline configuration
+  - Created Todo demo application
+
+### Next Week Plans
+
+- Integrate Jenkins CICD pipeline with AIOPS system:
+  - Implement deployment commands processing
+  - Create pipeline trigger mechanism
 
 # Conclusion
 
