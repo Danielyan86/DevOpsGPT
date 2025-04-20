@@ -44,6 +44,9 @@
   - [Week 6 Report](#week-6-report)
     - [Achievements](#achievements-4)
     - [Next Week Plans](#next-week-plans-4)
+  - [Week 7 Report](#week-7-report)
+    - [Achievements](#achievements-5)
+    - [Next Week Plans](#next-week-plans-5)
 - [Conclusion](#conclusion)
 
 # Introduction
@@ -268,6 +271,18 @@ this is a general plan for project planning, the details might be adjusted based
 - Integrate Jenkins CICD pipeline with AIOPS system:
   - Implement deployment commands processing
   - Create pipeline trigger mechanism
+
+## Week 7 Report
+
+### Achievements
+
+- Implemented deployment command processing with natural language parsing
+- Integrated Jenkins pipeline with webhook triggers
+
+### Next Week Plans
+
+- Conduct end-to-end testing of deployment workflow
+- Fix bugs and optimize system performance
 
 # Conclusion
 
