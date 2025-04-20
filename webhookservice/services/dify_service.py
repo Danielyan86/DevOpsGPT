@@ -119,9 +119,23 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
                     logger.info(f"Returning JSON message: {json_content}")
                     return json_content
                 except json.JSONDecodeError:
-                    # If not JSON, return as plain text
-                    logger.info(f"Returning plain text message: {text}")
-                    return {"message": text}
+                    # If not JSON, try to extract JSON from the text
+                    try:
+                        # Look for JSON-like content in the text
+                        import re
+
+                        json_match = re.search(r"\{.*\}", text)
+                        if json_match:
+                            json_str = json_match.group(0)
+                            json_content = json.loads(json_str)
+                            logger.info(
+                                f"Extracted and returning JSON from text: {json_content}"
+                            )
+                            return json_content
+                    except:
+                        # If all JSON parsing attempts fail, return as plain text
+                        logger.info(f"Returning plain text message: {text}")
+                        return {"message": text}
 
         logger.warning("No valid content found in response")
         return None

@@ -26,34 +26,51 @@ class JenkinsService:
         self, branch: str, environment: str, channel: str = "#chatops"
     ) -> BuildResponse:
         try:
+            logger.info(f"Attempting to trigger Jenkins build with parameters:")
+            logger.info(f"- Branch: {branch}")
+            logger.info(f"- Environment: {environment}")
+            logger.info(f"- Channel: {channel}")
+            logger.info(f"- Jenkins URL: {self.url}")
+
             params = {
                 "branch": branch,
                 "environment": environment,
                 "SLACK_CHANNEL": channel,
             }
 
+            logger.info(
+                f"Sending POST request to {self.url}/buildWithParameters with params: {params}"
+            )
             response = requests.post(
                 f"{self.url}/buildWithParameters", params=params, auth=self.auth
             )
 
+            logger.info(f"Jenkins API response status code: {response.status_code}")
+            logger.info(f"Jenkins API response text: {response.text}")
+
             if response.status_code in (200, 201):
+                build_number = self.get_last_build_number()
+                logger.info(
+                    f"Build triggered successfully. Build number: {build_number}"
+                )
                 return BuildResponse(
                     success=True,
-                    build_number=self.get_last_build_number(),
+                    build_number=build_number,
                     message="Build triggered successfully",
                 )
 
+            error_msg = f"Failed to trigger build: {response.status_code}"
+            logger.error(error_msg)
             return BuildResponse(
                 success=False,
                 build_number=None,
-                message=f"Failed to trigger build: {response.status_code}",
+                message=error_msg,
             )
 
         except Exception as e:
-            logger.error(f"Error triggering Jenkins build: {str(e)}")
-            return BuildResponse(
-                success=False, build_number=None, message=f"Error: {str(e)}"
-            )
+            error_msg = f"Error triggering Jenkins build: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            return BuildResponse(success=False, build_number=None, message=error_msg)
 
     def get_last_build_number(self):
         """Get the last build number from Jenkins"""
