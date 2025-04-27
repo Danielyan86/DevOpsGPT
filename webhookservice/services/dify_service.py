@@ -45,6 +45,7 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
             return {"error": response.text}
 
         message_content = []
+        final_message = None
 
         for line in response.iter_lines():
             if not line:
@@ -71,12 +72,9 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
                             thought_json = json.loads(thought_content)
                             if thought_json:
                                 # If this is a help message or deployment command, return it directly
-                                if (
-                                    "type" in thought_json
-                                    and thought_json["type"] == "help"
-                                ):
+                                if "type" in thought_json:
                                     logger.info(
-                                        f"Returning help message from thought: {thought_json}"
+                                        f"Returning thought response: {thought_json}"
                                     )
                                     return thought_json
                                 elif (
@@ -94,24 +92,30 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
                                         ),
                                     }
                                     logger.info(
-                                        f"Returning deployment parameters from thought: {deployment_params}"
+                                        f"Returning deployment parameters: {deployment_params}"
                                     )
                                     return deployment_params
                         except json.JSONDecodeError:
-                            # If thought_content is not JSON, append it to message_content
-                            message_content.append(thought_content)
+                            # Only append non-duplicate content
+                            if thought_content not in message_content:
+                                message_content.append(thought_content)
 
                 elif event_type == "agent_message":
                     answer = data.get("answer", "").strip()
                     if answer:
-                        message_content.append(answer)
+                        # Only append non-duplicate content
+                        if answer not in message_content:
+                            message_content.append(answer)
+                elif event_type == "end":
+                    final_message = data.get("answer", "").strip()
 
             except json.JSONDecodeError:
                 continue
 
         # If we get here and have message content
-        if message_content:
-            text = "".join(message_content).strip()
+        if message_content or final_message:
+            # Use final message if available, otherwise join message content
+            text = final_message if final_message else "".join(message_content).strip()
             if text:
                 try:
                     # Try to parse as JSON first
@@ -119,23 +123,21 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
                     logger.info(f"Returning JSON message: {json_content}")
                     return json_content
                 except json.JSONDecodeError:
-                    # If not JSON, try to extract JSON from the text
-                    try:
-                        # Look for JSON-like content in the text
-                        import re
+                    # Clean up the text by removing duplicates and fixing formatting
+                    lines = text.split("\n")
+                    # Remove duplicates while preserving order
+                    seen = set()
+                    cleaned_lines = []
+                    for line in lines:
+                        line = line.strip()
+                        if line and line not in seen:
+                            seen.add(line)
+                            cleaned_lines.append(line)
 
-                        json_match = re.search(r"\{.*\}", text)
-                        if json_match:
-                            json_str = json_match.group(0)
-                            json_content = json.loads(json_str)
-                            logger.info(
-                                f"Extracted and returning JSON from text: {json_content}"
-                            )
-                            return json_content
-                    except:
-                        # If all JSON parsing attempts fail, return as plain text
-                        logger.info(f"Returning plain text message: {text}")
-                        return {"message": text}
+                    # Join lines back together
+                    cleaned_text = "\n".join(cleaned_lines)
+                    logger.info(f"Returning plain text message: {cleaned_text}")
+                    return {"message": cleaned_text}
 
         logger.warning("No valid content found in response")
         return None
