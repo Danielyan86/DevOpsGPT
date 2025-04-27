@@ -47,11 +47,13 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
         message_content = []
         final_message = None
 
+        logger.info("Starting to process Dify API response stream")
         for line in response.iter_lines():
             if not line:
                 continue
 
             line = line.decode("utf-8")
+            logger.debug(f"Raw response line: {line}")
 
             # Handle ping events
             if line.startswith("event: ping"):
@@ -64,9 +66,11 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
             try:
                 data = json.loads(line)
                 event_type = data.get("event")
+                logger.debug(f"Processing event type: {event_type}")
 
                 if event_type == "agent_thought":
                     thought_content = data.get("thought", "")
+                    logger.debug(f"Received thought content: {thought_content}")
                     if thought_content:
                         try:
                             thought_json = json.loads(thought_content)
@@ -98,24 +102,35 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
                         except json.JSONDecodeError:
                             # Only append non-duplicate content
                             if thought_content not in message_content:
+                                logger.debug(
+                                    f"Adding thought content to message_content: {thought_content}"
+                                )
                                 message_content.append(thought_content)
 
                 elif event_type == "agent_message":
                     answer = data.get("answer", "").strip()
+                    logger.debug(f"Received agent message: {answer}")
                     if answer:
                         # Only append non-duplicate content
                         if answer not in message_content:
+                            logger.debug(
+                                f"Adding agent message to message_content: {answer}"
+                            )
                             message_content.append(answer)
                 elif event_type == "end":
                     final_message = data.get("answer", "").strip()
+                    logger.debug(f"Received end message: {final_message}")
 
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse JSON from line: {line}, error: {str(e)}")
                 continue
 
         # If we get here and have message content
         if message_content or final_message:
             # Use final message if available, otherwise join message content
             text = final_message if final_message else "".join(message_content).strip()
+            logger.debug(f"Combined raw text before cleaning: {text}")
+
             if text:
                 try:
                     # Try to parse as JSON first
@@ -123,19 +138,60 @@ def parse_deployment_intent(message: str) -> Optional[Dict]:
                     logger.info(f"Returning JSON message: {json_content}")
                     return json_content
                 except json.JSONDecodeError:
-                    # Clean up the text by removing duplicates and fixing formatting
-                    lines = text.split("\n")
-                    # Remove duplicates while preserving order
-                    seen = set()
-                    cleaned_lines = []
-                    for line in lines:
-                        line = line.strip()
-                        if line and line not in seen:
-                            seen.add(line)
+                    # Find the well-formatted version of the text
+                    formatted_text = None
+                    for possible_text in text.split("I can help you"):
+                        if (
+                            "deploy applications" in possible_text
+                            and "Try commands like:" in possible_text
+                        ):
+                            formatted_text = "I can help you" + possible_text
+                            break
+
+                    if formatted_text:
+                        # Clean up the formatted text
+                        lines = []
+                        current_line = ""
+                        for char in formatted_text:
+                            if char == "-" and current_line.strip():
+                                if current_line.strip():
+                                    lines.append(current_line.strip())
+                                current_line = "-"
+                            else:
+                                current_line += char
+                        if current_line.strip():
+                            lines.append(current_line.strip())
+
+                        # Clean up each line
+                        cleaned_lines = []
+                        for line in lines:
+                            line = line.strip()
+                            # Skip empty lines or duplicates
+                            if not line or line in cleaned_lines:
+                                continue
+                            # Fix formatting of command lines
+                            if line.startswith("-"):
+                                if not line.startswith("- "):
+                                    line = "- " + line[1:].strip()
                             cleaned_lines.append(line)
 
-                    # Join lines back together
-                    cleaned_text = "\n".join(cleaned_lines)
+                        # Join lines back together
+                        cleaned_text = "\n".join(cleaned_lines)
+                    else:
+                        # If we couldn't find a well-formatted version, clean up the text as best we can
+                        lines = text.split("\n")
+                        cleaned_lines = []
+                        for line in lines:
+                            line = line.strip()
+                            if not line or line in cleaned_lines:
+                                continue
+                            if line.startswith("-"):
+                                if not line.startswith("- "):
+                                    line = "- " + line[1:].strip()
+                            cleaned_lines.append(line)
+                        cleaned_text = "\n".join(cleaned_lines)
+
+                    logger.debug(f"Final cleaned text: {cleaned_text}")
                     logger.info(f"Returning plain text message: {cleaned_text}")
                     return {"message": cleaned_text}
 
