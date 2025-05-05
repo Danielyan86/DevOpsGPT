@@ -47,6 +47,9 @@
   - [Week 7 Report](#week-7-report)
     - [Achievements](#achievements-5)
     - [Next Week Plans](#next-week-plans-5)
+  - [Week 8 Report](#week-8-report)
+    - [Achievements](#achievements-6)
+    - [Next Week Plans](#next-week-plans-6)
 - [Conclusion](#conclusion)
 
 # Introduction
@@ -283,6 +286,17 @@ this is a general plan for project planning, the details might be adjusted based
 
 - Conduct end-to-end testing of deployment workflow
 - Fix bugs and optimize system performance
+
+## Week 8 Report
+
+### Achievements
+
+- Conducted end-to-end testing of deployment workflow
+- Fixed bugs and optimized system performance
+
+### Next Week Plans
+
+- Integrate one more LLM: DeepSeek model
 
 # Conclusion
 
