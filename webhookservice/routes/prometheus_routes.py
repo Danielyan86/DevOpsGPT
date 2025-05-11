@@ -5,11 +5,11 @@ from webhookservice.services.dify_service import parse_monitoring_intent
 from webhookservice.services.slack_service import send_slack_message
 import json
 
-monitor_bp = Blueprint("monitor", __name__)
+prometheus_bp = Blueprint("prometheus", __name__)
 prometheus_service = PrometheusService()
 
 
-@monitor_bp.route("/metrics/current", methods=["GET"])
+@prometheus_bp.route("/metrics/current", methods=["GET"])
 @handle_errors
 def get_current_metrics():
     """Get current process metrics"""
@@ -17,7 +17,7 @@ def get_current_metrics():
     return jsonify(metrics)
 
 
-@monitor_bp.route("/metrics/range", methods=["GET"])
+@prometheus_bp.route("/metrics/range", methods=["GET"])
 @handle_errors
 def get_metrics_range():
     """Get metrics over a time range"""
@@ -28,7 +28,7 @@ def get_metrics_range():
     return jsonify(data)
 
 
-@monitor_bp.route("/metrics/query", methods=["GET"])
+@prometheus_bp.route("/metrics/query", methods=["GET"])
 @handle_errors
 def query_metrics():
     """Execute a custom Prometheus query"""
@@ -40,7 +40,7 @@ def query_metrics():
     return jsonify(result)
 
 
-@monitor_bp.route("/monitor-chat", methods=["POST"])
+@prometheus_bp.route("/monitor-chat", methods=["POST"])
 @handle_errors
 def handle_natural_language_monitor():
     """Handle natural language monitoring requests from Slack"""
@@ -112,7 +112,7 @@ def handle_natural_language_monitor():
         return jsonify({"error": error_msg}), 500
 
 
-@monitor_bp.route("/test-dify", methods=["POST"])
+@prometheus_bp.route("/test-dify", methods=["POST"])
 @handle_errors
 def test_dify_intent():
     """Test endpoint for Dify intent parsing"""
@@ -132,4 +132,4 @@ def test_dify_intent():
         return jsonify({"input_message": message, "parsed_result": result}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 500 

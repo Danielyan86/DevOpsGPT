@@ -799,4 +799,4 @@ def handle_monitor_actions():
 
     except Exception as e:
         logger.error(f"Error handling monitoring action: {str(e)}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 500 
