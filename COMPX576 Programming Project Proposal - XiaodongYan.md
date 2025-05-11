@@ -50,6 +50,9 @@
   - [Week 8 Report](#week-8-report)
     - [Achievements](#achievements-6)
     - [Next Week Plans](#next-week-plans-6)
+  - [Week 9 Report](#week-9-report)
+    - [Achievements](#achievements-7)
+    - [Next Week Plans](#next-week-plans-7)
 - [Conclusion](#conclusion)
 
 # Introduction
@@ -297,6 +300,21 @@ this is a general plan for project planning, the details might be adjusted based
 ### Next Week Plans
 
 - Integrate one more LLM: DeepSeek model
+
+
+## Week 9 Report
+
+### Achievements
+
+- Successfully integrated DeepSeek model as an additional LLM option
+- Implemented message format conversion layer to handle differences between DeepSeek and ChatGPT responses
+- Tested and validated DeepSeek integration with existing deployment and monitoring workflows
+
+### Next Week Plans
+
+- Prepare comprehensive demo showcasing both ChatGPT and DeepSeek capabilities
+- Create presentation slides highlighting key features and architecture
+
 
 # Conclusion
 
