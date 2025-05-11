@@ -1,6 +1,5 @@
 from flask import Flask
 from flask_cors import CORS
-from webhookservice.routes.monitor_routes import monitor_bp
 from webhookservice.routes.slack_slash_routes import slack_slash_bp
 from webhookservice.routes.slack_events_routes import slack_events_bp
 from webhookservice.routes.prometheus_routes import prometheus_bp
@@ -16,7 +15,6 @@ def create_app():
     validate_config()
 
     # Register blueprints
-    app.register_blueprint(monitor_bp, url_prefix="/metrics")
     app.register_blueprint(slack_slash_bp, url_prefix="/deploy")
     app.register_blueprint(
         slack_events_bp
