@@ -2,7 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 from webhookservice.routes.monitor_routes import monitor_bp
 from webhookservice.routes.slack_slash_routes import slack_slash_bp
-from webhookservice.routes.slack_bot_routes import slack_events_bp
+from webhookservice.routes.deploy_routes import slack_events_bp
 from config.settings import validate_config
 
 
