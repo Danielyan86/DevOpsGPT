@@ -275,60 +275,80 @@ def parse_monitoring_intent(message: str) -> Dict[str, Any]:
             logger.error(f"Error from Dify API: {response.text}")
             return {"error": response.text}
 
-        thought_content = None
         message_content = []
+        
+        def handle_thought_content(thought_content: str) -> Optional[Dict]:
+            if not thought_content:
+                return None
+                
+            thought_json = extract_json_from_markdown(thought_content)
+            if not thought_json:
+                return None
+                
+            if "type" in thought_json and thought_json["type"] == "help":
+                return thought_json
+                
+            if "query_type" in thought_json:
+                return {
+                    "type": "monitoring",
+                    "query_type": thought_json.get("query_type", "current"),
+                    "metric": thought_json.get("metric", "all"),
+                    "hours": int(thought_json.get("hours", 1)),
+                    "original_message": message
+                }
+                
+            return {"type": "unknown", "message": str(thought_json)}
+            
+        def handle_final_message(final_message: str) -> Optional[Dict]:
+            if not final_message:
+                return None
+                
+            final_json = extract_json_from_markdown(final_message)
+            if not final_json:
+                return None
+                
+            if "type" not in final_json:
+                return None
+                
+            if final_json["type"] == "help":
+                return final_json
+                
+            if final_json["type"] == "monitoring":
+                return {
+                    "type": "monitoring",
+                    "query_type": final_json.get("query_type", "current"),
+                    "metric": final_json.get("metric", "all"),
+                    "hours": int(final_json.get("hours", 1)),
+                    "original_message": message
+                }
+                
+            return None
 
         for line in response.iter_lines():
-            if line:
-                line_str = line.decode("utf-8").replace("data: ", "")
-                try:
-                    data = json.loads(line_str)
-                    if data.get("event") == "agent_thought":
-                        thought_content = data.get("thought", "")
-                        if thought_content:
-                            # Try to extract JSON from the thought content
-                            thought_json = extract_json_from_markdown(thought_content)
-                            if thought_json:
-                                # Check if this is a help or non-monitoring message
-                                if "type" in thought_json and thought_json["type"] == "help":
-                                    return thought_json
-
-                                # Parse monitoring parameters
-                                if "query_type" in thought_json:
-                                    parsed_params = {
-                                        "type": "monitoring",
-                                        "query_type": thought_json.get("query_type", "current"),
-                                        "metric": thought_json.get("metric", "all"),
-                                        "hours": int(thought_json.get("hours", 1)),
-                                        "original_message": message
-                                    }
-                                    return parsed_params
-
-                                # If we got JSON but it's not in the expected format
-                                return {"type": "unknown", "message": str(thought_json)}
-                    elif data.get("event") == "message":
-                        message_content.append(data.get("answer", ""))
-                    elif data.get("event") == "end":
-                        final_message = data.get("answer", "")
-                        if final_message:
-                            # Try to extract JSON from the final message
-                            final_json = extract_json_from_markdown(final_message)
-                            if final_json:
-                                # Handle both old and new format
-                                if "type" in final_json:
-                                    if final_json["type"] == "help":
-                                        return final_json
-                                    elif final_json["type"] == "monitoring":
-                                        return {
-                                            "type": "monitoring",
-                                            "query_type": final_json.get("query_type", "current"),
-                                            "metric": final_json.get("metric", "all"),
-                                            "hours": int(final_json.get("hours", 1)),
-                                            "original_message": message
-                                        }
-                            message_content.append(final_message)
-                except json.JSONDecodeError:
-                    continue
+            if not line:
+                continue
+                
+            line_str = line.decode("utf-8").replace("data: ", "")
+            try:
+                data = json.loads(line_str)
+                event_type = data.get("event")
+                
+                if event_type == "agent_thought":
+                    result = handle_thought_content(data.get("thought", ""))
+                    if result:
+                        return result
+                        
+                elif event_type == "message":
+                    message_content.append(data.get("answer", ""))
+                    
+                elif event_type == "end":
+                    result = handle_final_message(data.get("answer", ""))
+                    if result:
+                        return result
+                    message_content.append(data.get("answer", ""))
+                    
+            except json.JSONDecodeError:
+                continue
 
         # If we have message content but no JSON was found
         if message_content:
