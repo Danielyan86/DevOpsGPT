@@ -307,12 +307,11 @@ this is a general plan for project planning, the details might be adjusted based
 ### Achievements
 
 - Successfully integrated DeepSeek model as an additional LLM option
-- Implemented message format conversion layer to handle differences between DeepSeek and ChatGPT responses
 - Tested and validated DeepSeek integration with existing deployment and monitoring workflows
 
 ### Next Week Plans
 
-- Prepare comprehensive demo showcasing both ChatGPT and DeepSeek capabilities
+- Prepare comprehensive demo showcasing
 - Create presentation slides highlighting key features and architecture
 
 
