@@ -180,3 +180,5 @@ icons_source/
 *.pdf
 COMPX576 presentation.md
 project_summary.md
+*.zip
+DevOpsGPT_submission/*

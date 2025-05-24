@@ -1,5 +1,5 @@
 import requests
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 from config.settings import PROMETHEUS_BASE_URL
 import logging

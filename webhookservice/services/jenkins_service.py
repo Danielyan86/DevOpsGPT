@@ -2,7 +2,6 @@ import requests
 from config.settings import JENKINS_URL, JENKINS_USER, JENKINS_TOKEN
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
-from requests import Response
 import logging
 
 logging.basicConfig(level=logging.INFO)

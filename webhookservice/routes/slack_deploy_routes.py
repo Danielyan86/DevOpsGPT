@@ -4,7 +4,6 @@ import json
 from .slack_events_routes import slack_events_bp, logger, processed_events
 from webhookservice.services.dify_service import parse_deployment_intent
 from webhookservice.services.slack_service import send_slack_message, send_interactive_message, update_message
-from webhookservice.services.jenkins_service import trigger_jenkins_build
 
 @slack_events_bp.route("/deploy/events", methods=["POST"])
 def handle_deploy_events():
