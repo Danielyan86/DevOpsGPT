@@ -53,6 +53,8 @@
   - [Week 9 Report](#week-9-report)
     - [Achievements](#achievements-7)
     - [Next Week Plans](#next-week-plans-7)
+  - [Week 10 Report](#week-10-report)
+    - [Achievements](#achievements-8)
 - [Conclusion](#conclusion)
 
 # Introduction
@@ -314,6 +316,10 @@ this is a general plan for project planning, the details might be adjusted based
 - Prepare comprehensive demo showcasing
 - Create presentation slides highlighting key features and architecture
 
+## Week 10 Report
+
+### Achievements
+- Prepare comprehensive demo showcasing
 
 # Conclusion
 
